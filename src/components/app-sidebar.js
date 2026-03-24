@@ -19,7 +19,7 @@ const NAV = [
   { href: "#", label: "Dashboard", icon: LayoutDashboard, ready: false },
   { href: "/sales", label: "Sales", icon: ShoppingCart, ready: true },
   { href: "/students", label: "Students", icon: GraduationCap, ready: true },
-  { href: "#", label: "Testimonials", icon: MessageSquareQuote, ready: false },
+  { href: "/proof", label: "Proof Engine", icon: MessageSquareQuote, ready: true },
   { href: "#", label: "Targeting", icon: Target, ready: false },
   { href: "#", label: "Scaling", icon: Zap, ready: false },
   { href: "#", label: "Analytics", icon: BarChart3, ready: false },
