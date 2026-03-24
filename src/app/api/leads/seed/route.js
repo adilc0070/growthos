@@ -19,10 +19,24 @@ export async function POST() {
     phone: l.phone,
     email: l.email || "",
     source: l.source,
+    adSource: l.adSource || "",
     status: l.status,
     budget: l.budget || "",
     courseInterest: l.courseInterest || "",
     tags: l.tags || [],
+    persona: l.persona || "",
+    urgency: l.urgency || "low",
+    engagement: l.engagement || "none",
+    leadScore: l.leadScore || 0,
+    temperature: l.temperature || "cold",
+    qualificationData: l.qualificationData
+      ? {
+          ...l.qualificationData,
+          qualifiedAt: l.qualificationData.qualifiedAt
+            ? new Date(l.qualificationData.qualifiedAt)
+            : null,
+        }
+      : undefined,
     notes: (l.notes || []).map((n) => ({
       text: n.text,
       createdAt: new Date(n.createdAt),

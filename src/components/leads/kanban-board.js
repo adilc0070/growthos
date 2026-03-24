@@ -77,6 +77,36 @@ export default function KanbanBoard({ leads, onCardClick, onStatusChange }) {
   );
 }
 
+function TemperatureDot({ temperature }) {
+  const cls =
+    temperature === "hot"
+      ? "bg-red-500"
+      : temperature === "warm"
+        ? "bg-amber-500"
+        : "bg-sky-400";
+  const label =
+    temperature === "hot" ? "Hot" : temperature === "warm" ? "Warm" : "Cold";
+  return (
+    <span className="flex items-center gap-1" title={`${label} lead`}>
+      <span className={`size-2 rounded-full ${cls}`} />
+    </span>
+  );
+}
+
+function ScorePill({ score }) {
+  const bg =
+    score >= 65
+      ? "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300"
+      : score >= 35
+        ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
+        : "bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300";
+  return (
+    <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums ${bg}`}>
+      {score}
+    </span>
+  );
+}
+
 function LeadCard({ lead, onClick, onDragStart }) {
   const overdue = isOverdue(lead.followUpDate);
   const sourceBg =
@@ -94,11 +124,17 @@ function LeadCard({ lead, onClick, onDragStart }) {
       className="group cursor-pointer rounded-lg border border-stone-200 bg-white p-3 shadow-sm transition hover:shadow-md active:opacity-80 dark:border-stone-700 dark:bg-stone-900"
     >
       <div className="flex items-start justify-between gap-2">
-        <p className="text-sm font-semibold leading-tight">{lead.name}</p>
-        <GripVertical
-          size={14}
-          className="mt-0.5 shrink-0 text-stone-300 opacity-0 transition group-hover:opacity-100 dark:text-stone-600"
-        />
+        <div className="flex items-center gap-1.5 min-w-0">
+          <TemperatureDot temperature={lead.temperature || "cold"} />
+          <p className="text-sm font-semibold leading-tight truncate">{lead.name}</p>
+        </div>
+        <div className="flex items-center gap-1 shrink-0">
+          <ScorePill score={lead.leadScore || 0} />
+          <GripVertical
+            size={14}
+            className="text-stone-300 opacity-0 transition group-hover:opacity-100 dark:text-stone-600"
+          />
+        </div>
       </div>
 
       <div className="mt-1.5 flex items-center gap-1.5 text-xs text-stone-500 dark:text-stone-400">
@@ -115,6 +151,11 @@ function LeadCard({ lead, onClick, onDragStart }) {
             {lead.budget}
           </span>
         )}
+        {lead.persona && (
+          <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-medium text-violet-700 dark:bg-violet-900/40 dark:text-violet-300">
+            {lead.persona.replace(/_/g, " ")}
+          </span>
+        )}
       </div>
 
       {lead.courseInterest && (
@@ -124,7 +165,7 @@ function LeadCard({ lead, onClick, onDragStart }) {
       )}
 
       <div className="mt-2 flex flex-wrap gap-1">
-        {lead.tags.map((tag) => (
+        {(lead.tags || []).map((tag) => (
           <span
             key={tag}
             className="rounded bg-stone-100 px-1.5 py-0.5 text-[10px] text-stone-500 dark:bg-stone-800 dark:text-stone-400"

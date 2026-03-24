@@ -1,7 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { STATUSES, SOURCES, COURSES } from "@/lib/leads-data";
+import {
+  STATUSES, SOURCES, COURSES, PERSONAS,
+  URGENCY_LEVELS, ENGAGEMENT_LEVELS, AD_SOURCES,
+} from "@/lib/leads-data";
 import { X } from "lucide-react";
 
 const EMPTY = {
@@ -9,11 +12,15 @@ const EMPTY = {
   phone: "",
   email: "",
   source: "Ads",
+  adSource: "",
   status: "new",
   budget: "",
   courseInterest: "",
   tags: "",
   followUpDate: "",
+  persona: "",
+  urgency: "low",
+  engagement: "none",
 };
 
 export default function LeadForm({ lead, onSubmit, onClose }) {
@@ -27,6 +34,7 @@ export default function LeadForm({ lead, onSubmit, onClose }) {
         phone: lead.phone,
         email: lead.email || "",
         source: lead.source,
+        adSource: lead.adSource || "",
         status: lead.status,
         budget: lead.budget || "",
         courseInterest: lead.courseInterest || "",
@@ -34,6 +42,9 @@ export default function LeadForm({ lead, onSubmit, onClose }) {
         followUpDate: lead.followUpDate
           ? new Date(lead.followUpDate).toISOString().split("T")[0]
           : "",
+        persona: lead.persona || "",
+        urgency: lead.urgency || "low",
+        engagement: lead.engagement || "none",
       });
     }
   }, [lead]);
@@ -42,9 +53,12 @@ export default function LeadForm({ lead, onSubmit, onClose }) {
     return (e) => setForm((p) => ({ ...p, [key]: e.target.value }));
   }
 
+  const filteredAdSources = AD_SOURCES.filter(
+    (as) => as.group === form.source || !form.source
+  );
+
   function handleSubmit(e) {
     e.preventDefault();
-    const now = new Date().toISOString();
     const tags = form.tags
       .split(",")
       .map((t) => t.trim())
@@ -55,11 +69,15 @@ export default function LeadForm({ lead, onSubmit, onClose }) {
       phone: form.phone,
       email: form.email,
       source: form.source,
+      adSource: form.adSource,
       status: form.status,
       budget: form.budget,
       courseInterest: form.courseInterest,
       tags,
       followUpDate: form.followUpDate || null,
+      persona: form.persona,
+      urgency: form.urgency,
+      engagement: form.engagement,
     };
 
     if (editing) {
@@ -86,7 +104,7 @@ export default function LeadForm({ lead, onSubmit, onClose }) {
 
         <form onSubmit={handleSubmit} className="space-y-4 p-5">
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Name *" required>
+            <Field label="Name *">
               <input
                 required
                 value={form.name}
@@ -95,7 +113,7 @@ export default function LeadForm({ lead, onSubmit, onClose }) {
                 className="input"
               />
             </Field>
-            <Field label="Phone *" required>
+            <Field label="Phone *">
               <input
                 required
                 value={form.phone}
@@ -124,11 +142,34 @@ export default function LeadForm({ lead, onSubmit, onClose }) {
                 ))}
               </select>
             </Field>
+            <Field label="Ad Source (detailed)">
+              <select value={form.adSource} onChange={set("adSource")} className="input">
+                <option value="">Select…</option>
+                {filteredAdSources.map((as) => (
+                  <option key={as.id} value={as.id}>
+                    {as.label}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Status">
               <select value={form.status} onChange={set("status")} className="input">
                 {STATUSES.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.label}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Persona">
+              <select value={form.persona} onChange={set("persona")} className="input">
+                <option value="">Auto-detect</option>
+                {PERSONAS.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.icon} {p.label}
                   </option>
                 ))}
               </select>
@@ -153,6 +194,27 @@ export default function LeadForm({ lead, onSubmit, onClose }) {
                 <option value="">Select…</option>
                 {COURSES.map((c) => (
                   <option key={c}>{c}</option>
+                ))}
+              </select>
+            </Field>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Urgency">
+              <select value={form.urgency} onChange={set("urgency")} className="input">
+                {URGENCY_LEVELS.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.label}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Engagement">
+              <select value={form.engagement} onChange={set("engagement")} className="input">
+                {ENGAGEMENT_LEVELS.map((e) => (
+                  <option key={e.id} value={e.id}>
+                    {e.label}
+                  </option>
                 ))}
               </select>
             </Field>

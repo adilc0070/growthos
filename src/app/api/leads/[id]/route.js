@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Lead from "@/models/Lead";
+import { computeAndApplyScore } from "@/lib/lead-scoring";
 
 export async function GET(_request, { params }) {
   await dbConnect();
@@ -23,11 +24,15 @@ export async function PUT(request, { params }) {
     "phone",
     "email",
     "source",
+    "adSource",
     "status",
     "budget",
     "courseInterest",
     "tags",
     "followUpDate",
+    "persona",
+    "urgency",
+    "engagement",
   ];
   for (const key of updatableFields) {
     if (body[key] !== undefined) lead[key] = body[key];
@@ -39,6 +44,7 @@ export async function PUT(request, { params }) {
     createdAt: new Date(),
   });
 
+  computeAndApplyScore(lead);
   await lead.save();
   return NextResponse.json(lead);
 }

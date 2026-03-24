@@ -1,7 +1,14 @@
 "use client";
 
-import { SOURCES, COURSES } from "@/lib/leads-data";
+import { SOURCES, COURSES, TEMPERATURES, PERSONAS } from "@/lib/leads-data";
 import { Filter, X } from "lucide-react";
+
+const DEFAULTS = {
+  source: "all",
+  courseInterest: "all",
+  temperature: "all",
+  persona: "all",
+};
 
 export default function LeadFilters({ filters, onChange, totalCount, filteredCount }) {
   function set(key) {
@@ -9,10 +16,14 @@ export default function LeadFilters({ filters, onChange, totalCount, filteredCou
   }
 
   function reset() {
-    onChange({ source: "all", courseInterest: "all" });
+    onChange({ ...DEFAULTS });
   }
 
-  const hasFilters = filters.source !== "all" || filters.courseInterest !== "all";
+  const hasFilters =
+    filters.source !== "all" ||
+    filters.courseInterest !== "all" ||
+    filters.temperature !== "all" ||
+    filters.persona !== "all";
 
   return (
     <div className="flex flex-wrap items-center gap-3">
@@ -20,6 +31,32 @@ export default function LeadFilters({ filters, onChange, totalCount, filteredCou
         <Filter size={14} />
         <span>Filters</span>
       </div>
+
+      <select
+        value={filters.temperature || "all"}
+        onChange={set("temperature")}
+        className="select-sm"
+      >
+        <option value="all">All temps</option>
+        {TEMPERATURES.map((t) => (
+          <option key={t.id} value={t.id}>
+            {t.label}
+          </option>
+        ))}
+      </select>
+
+      <select
+        value={filters.persona || "all"}
+        onChange={set("persona")}
+        className="select-sm"
+      >
+        <option value="all">All personas</option>
+        {PERSONAS.map((p) => (
+          <option key={p.id} value={p.id}>
+            {p.icon} {p.label}
+          </option>
+        ))}
+      </select>
 
       <select
         value={filters.source}

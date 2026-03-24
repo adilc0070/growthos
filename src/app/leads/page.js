@@ -8,6 +8,7 @@ import LeadForm from "@/components/leads/lead-form";
 import LeadDetail from "@/components/leads/lead-detail";
 import LeadFilters from "@/components/leads/lead-filters";
 import BulkUpload from "@/components/leads/bulk-upload";
+import QualificationForm from "@/components/leads/qualification-form";
 import { Plus, Search, Loader2, Database, Upload } from "lucide-react";
 
 export default function LeadsPage() {
@@ -20,11 +21,14 @@ export default function LeadsPage() {
   const [editingLead, setEditingLead] = useState(null);
   const [saving, setSaving] = useState(false);
   const [showBulkUpload, setShowBulkUpload] = useState(false);
+  const [qualifyingLead, setQualifyingLead] = useState(null);
 
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState({
     source: "all",
     courseInterest: "all",
+    temperature: "all",
+    persona: "all",
   });
 
   const loadLeads = useCallback(async () => {
@@ -33,6 +37,8 @@ export default function LeadsPage() {
       const data = await api.fetchLeads({
         source: filters.source,
         courseInterest: filters.courseInterest,
+        temperature: filters.temperature,
+        persona: filters.persona,
         search: search || undefined,
       });
       setLeads(data);
@@ -241,6 +247,23 @@ export default function LeadsPage() {
           onEdit={openEdit}
           onDelete={handleDeleteLead}
           onStatusChange={handleStatusChange}
+          onQualify={(lead) => {
+            setQualifyingLead(lead);
+            setSelectedLead(null);
+          }}
+        />
+      )}
+
+      {/* Qualification form modal */}
+      {qualifyingLead && (
+        <QualificationForm
+          lead={qualifyingLead}
+          onSubmit={async (id, data) => {
+            const updated = await api.qualifyLead(id, data);
+            setLeads((prev) => prev.map((l) => (l._id === id ? updated : l)));
+            setQualifyingLead(null);
+          }}
+          onClose={() => setQualifyingLead(null)}
         />
       )}
 

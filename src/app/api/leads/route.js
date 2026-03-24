@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Lead from "@/models/Lead";
+import { computeAndApplyScore } from "@/lib/lead-scoring";
 
 export async function GET(request) {
   await dbConnect();
@@ -9,11 +10,24 @@ export async function GET(request) {
   const source = searchParams.get("source");
   const courseInterest = searchParams.get("courseInterest");
   const search = searchParams.get("search");
+  const temperature = searchParams.get("temperature");
+  const persona = searchParams.get("persona");
+  const minScore = searchParams.get("minScore");
+  const maxScore = searchParams.get("maxScore");
+  const adSource = searchParams.get("adSource");
 
   const filter = {};
   if (source && source !== "all") filter.source = source;
   if (courseInterest && courseInterest !== "all")
     filter.courseInterest = courseInterest;
+  if (temperature && temperature !== "all") filter.temperature = temperature;
+  if (persona && persona !== "all") filter.persona = persona;
+  if (adSource && adSource !== "all") filter.adSource = adSource;
+  if (minScore || maxScore) {
+    filter.leadScore = {};
+    if (minScore) filter.leadScore.$gte = Number(minScore);
+    if (maxScore) filter.leadScore.$lte = Number(maxScore);
+  }
   if (search) {
     const regex = new RegExp(search, "i");
     filter.$or = [
@@ -34,7 +48,7 @@ export async function POST(request) {
   const body = await request.json();
   const now = new Date();
 
-  const lead = await Lead.create({
+  const leadData = {
     ...body,
     timeline: [
       {
@@ -43,7 +57,10 @@ export async function POST(request) {
         createdAt: now,
       },
     ],
-  });
+  };
 
+  computeAndApplyScore(leadData);
+
+  const lead = await Lead.create(leadData);
   return NextResponse.json(lead, { status: 201 });
 }

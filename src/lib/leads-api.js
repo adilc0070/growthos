@@ -12,11 +12,19 @@ async function request(url, opts = {}) {
   return res.json();
 }
 
-export function fetchLeads({ source, courseInterest, search } = {}) {
+export function fetchLeads({
+  source, courseInterest, search,
+  temperature, persona, minScore, maxScore, adSource,
+} = {}) {
   const params = new URLSearchParams();
   if (source && source !== "all") params.set("source", source);
   if (courseInterest && courseInterest !== "all")
     params.set("courseInterest", courseInterest);
+  if (temperature && temperature !== "all") params.set("temperature", temperature);
+  if (persona && persona !== "all") params.set("persona", persona);
+  if (adSource && adSource !== "all") params.set("adSource", adSource);
+  if (minScore) params.set("minScore", minScore);
+  if (maxScore) params.set("maxScore", maxScore);
   if (search) params.set("search", search);
   const qs = params.toString();
   return request(`${BASE}${qs ? `?${qs}` : ""}`);
@@ -49,6 +57,25 @@ export function addNote(id, text) {
     method: "POST",
     body: JSON.stringify({ text }),
   });
+}
+
+export function qualifyLead(id, data) {
+  return request(`${BASE}/${id}/qualify`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function rescoreLead(id) {
+  return request(`${BASE}/${id}/rescore`, { method: "POST" });
+}
+
+export function fetchTargetingAnalytics() {
+  return request("/api/targeting/analytics");
+}
+
+export function rescoreAllLeads() {
+  return request("/api/targeting/rescore-all", { method: "POST" });
 }
 
 export function seedLeads() {
