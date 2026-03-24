@@ -12,7 +12,10 @@ const TimelineSchema = new mongoose.Schema(
   {
     type: {
       type: String,
-      enum: ["created", "status_change", "note", "edited", "follow_up"],
+      enum: [
+        "created", "status_change", "note", "edited", "follow_up",
+        "call_logged", "whatsapp_sent", "sequence_started",
+      ],
       required: true,
     },
     description: { type: String, required: true },
@@ -48,6 +51,7 @@ const LeadSchema = new mongoose.Schema(
     tags: [{ type: String, trim: true }],
     notes: [NoteSchema],
     timeline: [TimelineSchema],
+    assignedTo: { type: String, trim: true, default: "" },
     followUpDate: { type: Date, default: null },
   },
   {

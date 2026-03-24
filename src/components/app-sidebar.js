@@ -17,8 +17,8 @@ import {
 const NAV = [
   { href: "/leads", label: "Leads", icon: Users, ready: true },
   { href: "#", label: "Dashboard", icon: LayoutDashboard, ready: false },
-  { href: "#", label: "Sales", icon: ShoppingCart, ready: false },
-  { href: "#", label: "Students", icon: GraduationCap, ready: false },
+  { href: "/sales", label: "Sales", icon: ShoppingCart, ready: true },
+  { href: "/students", label: "Students", icon: GraduationCap, ready: true },
   { href: "#", label: "Testimonials", icon: MessageSquareQuote, ready: false },
   { href: "#", label: "Targeting", icon: Target, ready: false },
   { href: "#", label: "Scaling", icon: Zap, ready: false },
