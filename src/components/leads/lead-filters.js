@@ -1,6 +1,7 @@
 "use client";
 
-import { SOURCES, COURSES, TEMPERATURES, PERSONAS } from "@/lib/leads-data";
+import { SOURCES, TEMPERATURES, PERSONAS } from "@/lib/leads-data";
+import useCourses from "@/hooks/use-courses";
 import { Filter, X } from "lucide-react";
 
 const DEFAULTS = {
@@ -11,6 +12,8 @@ const DEFAULTS = {
 };
 
 export default function LeadFilters({ filters, onChange, totalCount, filteredCount }) {
+  const { courses } = useCourses();
+
   function set(key) {
     return (e) => onChange({ ...filters, [key]: e.target.value });
   }
@@ -77,9 +80,9 @@ export default function LeadFilters({ filters, onChange, totalCount, filteredCou
         className="select-sm"
       >
         <option value="all">All courses</option>
-        {COURSES.map((c) => (
-          <option key={c} value={c}>
-            {c}
+        {courses.map((c) => (
+          <option key={c._id} value={c.title}>
+            {c.title}
           </option>
         ))}
       </select>

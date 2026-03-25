@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import {
-  COURSES, QUALIFICATION_TIMELINES,
+  QUALIFICATION_TIMELINES,
   BUDGET_RANGES, COMMITMENT_LEVELS,
 } from "@/lib/leads-data";
 import { X, ClipboardCheck } from "lucide-react";

@@ -4,12 +4,11 @@ import { useState, useEffect, useCallback } from "react";
 import { STATUSES } from "@/lib/leads-data";
 import * as api from "@/lib/leads-api";
 import KanbanBoard from "@/components/leads/kanban-board";
-import LeadForm from "@/components/leads/lead-form";
 import LeadDetail from "@/components/leads/lead-detail";
 import LeadFilters from "@/components/leads/lead-filters";
-import BulkUpload from "@/components/leads/bulk-upload";
+import AddLeads from "@/components/leads/add-leads";
 import QualificationForm from "@/components/leads/qualification-form";
-import { Plus, Search, Loader2, Database, Upload } from "lucide-react";
+import { Plus, Search, Loader2, Database } from "lucide-react";
 
 export default function LeadsPage() {
   const [leads, setLeads] = useState([]);
@@ -20,7 +19,6 @@ export default function LeadsPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingLead, setEditingLead] = useState(null);
   const [saving, setSaving] = useState(false);
-  const [showBulkUpload, setShowBulkUpload] = useState(false);
   const [qualifyingLead, setQualifyingLead] = useState(null);
 
   const [search, setSearch] = useState("");
@@ -195,13 +193,6 @@ export default function LeadsPage() {
             </button>
           )}
           <button
-            onClick={() => setShowBulkUpload(true)}
-            className="flex items-center gap-2 rounded-lg border border-stone-300 px-3 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-800"
-          >
-            <Upload size={16} />
-            Bulk Upload
-          </button>
-          <button
             onClick={openAdd}
             className="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-400"
           >
@@ -226,11 +217,13 @@ export default function LeadsPage() {
         onStatusChange={handleStatusChange}
       />
 
-      {/* Form modal */}
+      {/* Add / Edit leads modal */}
       {showForm && (
-        <LeadForm
+        <AddLeads
           lead={editingLead}
-          onSubmit={editingLead ? handleUpdateLead : handleAddLead}
+          saving={saving}
+          onSubmitSingle={editingLead ? handleUpdateLead : handleAddLead}
+          onBulkDone={() => loadLeads()}
           onClose={() => {
             setShowForm(false);
             setEditingLead(null);
@@ -267,13 +260,6 @@ export default function LeadsPage() {
         />
       )}
 
-      {/* Bulk upload modal */}
-      {showBulkUpload && (
-        <BulkUpload
-          onClose={() => setShowBulkUpload(false)}
-          onDone={() => loadLeads()}
-        />
-      )}
     </div>
   );
 }
