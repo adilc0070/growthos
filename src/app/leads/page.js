@@ -8,7 +8,8 @@ import LeadDetail from "@/components/leads/lead-detail";
 import LeadFilters from "@/components/leads/lead-filters";
 import AddLeads from "@/components/leads/add-leads";
 import QualificationForm from "@/components/leads/qualification-form";
-import { Plus, Search, Loader2, Database } from "lucide-react";
+import WhatsAppBulkUpload from "@/components/leads/whatsapp-bulk-upload";
+import { Plus, Search, Loader2, Database, MessageCircle } from "lucide-react";
 
 export default function LeadsPage() {
   const [leads, setLeads] = useState([]);
@@ -20,6 +21,8 @@ export default function LeadsPage() {
   const [editingLead, setEditingLead] = useState(null);
   const [saving, setSaving] = useState(false);
   const [qualifyingLead, setQualifyingLead] = useState(null);
+
+  const [showWhatsApp, setShowWhatsApp] = useState(false);
 
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState({
@@ -193,6 +196,13 @@ export default function LeadsPage() {
             </button>
           )}
           <button
+            onClick={() => setShowWhatsApp(true)}
+            className="flex items-center gap-2 rounded-lg border border-green-300 bg-green-50 px-3 py-2 text-sm font-medium text-green-700 shadow-sm transition hover:bg-green-100 dark:border-green-800 dark:bg-green-950/40 dark:text-green-300 dark:hover:bg-green-900/50"
+          >
+            <MessageCircle size={16} />
+            WhatsApp Upload
+          </button>
+          <button
             onClick={openAdd}
             className="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-400"
           >
@@ -240,10 +250,22 @@ export default function LeadsPage() {
           onEdit={openEdit}
           onDelete={handleDeleteLead}
           onStatusChange={handleStatusChange}
+          onLeadUpdated={(updated) => {
+            setLeads((prev) => prev.map((l) => (l._id === updated._id ? updated : l)));
+            setSelectedLead(updated);
+          }}
           onQualify={(lead) => {
             setQualifyingLead(lead);
             setSelectedLead(null);
           }}
+        />
+      )}
+
+      {/* WhatsApp bulk upload modal */}
+      {showWhatsApp && (
+        <WhatsAppBulkUpload
+          onClose={() => setShowWhatsApp(false)}
+          onDone={() => loadLeads()}
         />
       )}
 

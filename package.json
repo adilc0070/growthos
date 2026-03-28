@@ -8,6 +8,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@mongodb-js/zstd": "^2.0.1",
     "bcryptjs": "^3.0.3",
     "lucide-react": "^1.6.0",
     "mongoose": "^8.23.0",

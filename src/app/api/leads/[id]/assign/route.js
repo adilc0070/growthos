@@ -1,40 +1,46 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Lead from "@/models/Lead";
+import User from "@/models/User";
 import { requireRole } from "@/lib/auth";
 import { normalizeLeadAssignees } from "@/lib/normalize-lead-assignees";
 
-export async function POST(request, { params }) {
+export async function PATCH(request, { params }) {
   const { session, error } = await requireRole("admin", "sales");
   if (error) return error;
+
   await dbConnect();
   await normalizeLeadAssignees();
   const { id } = await params;
-  const { text } = await request.json();
-
-  if (!text?.trim()) {
-    return NextResponse.json({ error: "Note text required" }, { status: 400 });
-  }
+  const { assignedTo } = await request.json();
 
   const lead = await Lead.findById(id);
   if (!lead) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const now = new Date();
-  const preview = text.length > 60 ? text.slice(0, 60) + "…" : text;
+  let assignee = null;
+  if (assignedTo) {
+    assignee = await User.findById(assignedTo).select("name email role isActive").lean();
+    if (!assignee || !assignee.isActive) {
+      return NextResponse.json({ error: "Invalid assignee" }, { status: 400 });
+    }
+  }
 
-  lead.notes.push({ text: text.trim(), createdAt: now });
+  lead.assignedTo = assignedTo || null;
   lead.timeline.push({
-    type: "note",
-    description: `Note added: "${preview}"`,
+    type: "edited",
+    description: assignedTo
+      ? `Assigned to ${assignee?.name || "user"}`
+      : "Unassigned lead",
     actor: {
       userId: session.user.id,
       name: session.user.name || "",
       role: session.user.role || "",
     },
-    createdAt: now,
+    createdAt: new Date(),
   });
 
   await lead.save();
   const populated = await Lead.findById(id).populate("assignedTo", "name email role").lean();
   return NextResponse.json(populated);
 }
+

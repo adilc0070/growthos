@@ -59,6 +59,13 @@ export function addNote(id, text) {
   });
 }
 
+export function assignLead(id, assignedTo) {
+  return request(`${BASE}/${id}/assign`, {
+    method: "PATCH",
+    body: JSON.stringify({ assignedTo }),
+  });
+}
+
 export function qualifyLead(id, data) {
   return request(`${BASE}/${id}/qualify`, {
     method: "POST",
@@ -80,4 +87,22 @@ export function rescoreAllLeads() {
 
 export function seedLeads() {
   return request(`${BASE}/seed`, { method: "POST" });
+}
+
+export function fetchMessages(leadId) {
+  return request(`${BASE}/${leadId}/messages`);
+}
+
+export function sendWhatsAppMessage(data) {
+  return request("/api/automation/whatsapp", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function bulkUploadWhatsApp(messages) {
+  return request("/api/automation/whatsapp", {
+    method: "POST",
+    body: JSON.stringify(messages),
+  });
 }

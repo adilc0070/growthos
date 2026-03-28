@@ -2,9 +2,14 @@ import { NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Lead from "@/models/Lead";
 import { computeAndApplyScore } from "@/lib/lead-scoring";
+import { requireRole } from "@/lib/auth";
+import { normalizeLeadAssignees } from "@/lib/normalize-lead-assignees";
 
 export async function GET(request) {
+  const { session, error } = await requireRole("admin", "sales");
+  if (error) return error;
   await dbConnect();
+  await normalizeLeadAssignees();
 
   const { searchParams } = new URL(request.url);
   const source = searchParams.get("source");
@@ -38,15 +43,25 @@ export async function GET(request) {
     ];
   }
 
-  const leads = await Lead.find(filter).sort({ createdAt: -1 }).lean();
+  const leads = await Lead.find(filter)
+    .populate("assignedTo", "name email role")
+    .sort({ createdAt: -1 })
+    .lean();
   return NextResponse.json(leads);
 }
 
 export async function POST(request) {
+  const { session, error } = await requireRole("admin", "sales");
+  if (error) return error;
   await dbConnect();
 
   const body = await request.json();
   const now = new Date();
+  const actor = {
+    userId: session.user.id,
+    name: session.user.name || "",
+    role: session.user.role || "",
+  };
 
   const leadData = {
     ...body,
@@ -54,6 +69,7 @@ export async function POST(request) {
       {
         type: "created",
         description: "Lead created manually",
+        actor,
         createdAt: now,
       },
     ],

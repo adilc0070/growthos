@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   STATUSES, PERSONAS, TEMPERATURES, AD_SOURCES,
   formatDateTime, formatDate, isOverdue,
 } from "@/lib/leads-data";
+import * as leadsApi from "@/lib/leads-api";
+import { useSession } from "next-auth/react";
 import {
   X,
   Phone,
@@ -20,6 +22,13 @@ import {
   Gauge,
   Flame,
   ClipboardCheck,
+  UserRound,
+  MessageCircle,
+  Send,
+  Forward,
+  Mic,
+  Video,
+  FileText,
 } from "lucide-react";
 
 export default function LeadDetail({
@@ -30,9 +39,16 @@ export default function LeadDetail({
   onDelete,
   onStatusChange,
   onQualify,
+  onLeadUpdated,
 }) {
   const [tab, setTab] = useState("timeline");
   const [noteText, setNoteText] = useState("");
+  const [assignableUsers, setAssignableUsers] = useState([]);
+  const [assigning, setAssigning] = useState(false);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatLoading, setChatLoading] = useState(false);
+  const { data: session } = useSession();
+  const canAssign = session?.user?.role === "admin" || session?.user?.role === "sales";
 
   if (!lead) return null;
 
@@ -42,6 +58,26 @@ export default function LeadDetail({
   const personaInfo = PERSONAS.find((p) => p.id === lead.persona);
   const adSourceInfo = AD_SOURCES.find((a) => a.id === lead.adSource);
   const isQualified = !!lead.qualificationData?.qualifiedAt;
+
+  useEffect(() => {
+    if (!canAssign) return;
+    fetch("/api/users/assignable")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => setAssignableUsers(data))
+      .catch(() => {});
+  }, [canAssign]);
+
+  useEffect(() => {
+    if (tab !== "chat") return;
+    const leadId = lead._id || lead.id;
+    if (!leadId) return;
+    setChatLoading(true);
+    leadsApi
+      .fetchMessages(leadId)
+      .then((msgs) => setChatMessages(msgs))
+      .catch(() => setChatMessages([]))
+      .finally(() => setChatLoading(false));
+  }, [tab, lead._id, lead.id]);
 
   function handleAddNote(e) {
     e.preventDefault();
@@ -152,6 +188,45 @@ export default function LeadDetail({
           )}
         </div>
 
+        {/* Assignment */}
+        <div className="flex items-center justify-between gap-3 border-b border-stone-200 px-4 py-3 dark:border-stone-800">
+          <p className="flex items-center gap-2 text-xs font-medium text-stone-500 dark:text-stone-400">
+            <UserRound size={14} />
+            Assigned to
+          </p>
+
+          {canAssign ? (
+            <select
+              value={lead.assignedTo?._id || lead.assignedTo || ""}
+              disabled={assigning}
+              onChange={async (e) => {
+                const v = e.target.value || null;
+                setAssigning(true);
+                try {
+                  const updated = await leadsApi.assignLead(lead._id || lead.id, v);
+                  if (onLeadUpdated) onLeadUpdated(updated);
+                } catch (err) {
+                  alert("Failed to assign: " + err.message);
+                } finally {
+                  setAssigning(false);
+                }
+              }}
+              className="input max-w-[240px]"
+            >
+              <option value="">Unassigned</option>
+              {assignableUsers.map((u) => (
+                <option key={u._id} value={u._id}>
+                  {u.name} ({u.role})
+                </option>
+              ))}
+            </select>
+          ) : (
+            <span className="text-xs text-stone-500 dark:text-stone-400">
+              {lead.assignedTo?.name || "Unassigned"}
+            </span>
+          )}
+        </div>
+
         {/* Quick status change */}
         <div className="border-b border-stone-200 px-4 py-3 dark:border-stone-800">
           <p className="mb-2 text-xs font-medium text-stone-500 dark:text-stone-400">
@@ -209,6 +284,12 @@ export default function LeadDetail({
             label={`Notes (${(lead.notes || []).length})`}
           />
           <TabButton
+            active={tab === "chat"}
+            onClick={() => setTab("chat")}
+            icon={<MessageCircle size={14} />}
+            label="Chat"
+          />
+          <TabButton
             active={tab === "scoring"}
             onClick={() => setTab("scoring")}
             icon={<Gauge size={14} />}
@@ -228,6 +309,7 @@ export default function LeadDetail({
                   <p className="text-sm">{entry.description}</p>
                   <p className="mt-0.5 text-xs text-stone-400">
                     {formatDateTime(entry.createdAt)}
+                    {entry.actor?.name ? ` • ${entry.actor.name} (${entry.actor.role || "user"})` : ""}
                   </p>
                 </li>
               ))}
@@ -271,6 +353,10 @@ export default function LeadDetail({
                 </div>
               ))}
             </div>
+          )}
+
+          {tab === "chat" && (
+            <ChatPanel messages={chatMessages} loading={chatLoading} leadName={lead.name} />
           )}
 
           {tab === "scoring" && (
@@ -360,6 +446,114 @@ function TabButton({ active, onClick, icon, label }) {
       {icon}
       {label}
     </button>
+  );
+}
+
+function ChatPanel({ messages, loading, leadName }) {
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="size-5 animate-spin rounded-full border-2 border-stone-300 border-t-emerald-500" />
+      </div>
+    );
+  }
+
+  if (messages.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
+        <MessageCircle size={28} className="text-stone-300 dark:text-stone-600" />
+        <p className="text-sm text-stone-400">No WhatsApp messages yet</p>
+      </div>
+    );
+  }
+
+  let lastDate = "";
+
+  return (
+    <div className="flex flex-col gap-1">
+      {messages.map((msg) => {
+        const msgDate = new Date(msg.timestamp * 1000).toLocaleDateString("en-IN", {
+          day: "numeric", month: "short", year: "numeric",
+        });
+        const showDate = msgDate !== lastDate;
+        lastDate = msgDate;
+
+        return (
+          <div key={msg._id || msg.id}>
+            {showDate && (
+              <div className="my-2 flex justify-center">
+                <span className="rounded-full bg-stone-200 px-3 py-0.5 text-[10px] font-medium text-stone-500 dark:bg-stone-800 dark:text-stone-400">
+                  {msgDate}
+                </span>
+              </div>
+            )}
+            <ChatBubble msg={msg} leadName={leadName} />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function ChatBubble({ msg, leadName }) {
+  const time = new Date(msg.timestamp * 1000).toLocaleTimeString("en-IN", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  const isMe = msg.fromMe;
+
+  const typeIcon =
+    msg.type === "audio" || msg.type === "voice" ? <Mic size={12} /> :
+    msg.type === "video" ? <Video size={12} /> :
+    msg.type === "document" ? <FileText size={12} /> :
+    null;
+
+  return (
+    <div className={`flex ${isMe ? "justify-end" : "justify-start"} mb-1`}>
+      <div
+        className={`relative max-w-[85%] rounded-xl px-3 py-2 text-sm shadow-sm ${
+          isMe
+            ? "rounded-tr-sm bg-emerald-100 text-emerald-950 dark:bg-emerald-900/60 dark:text-emerald-50"
+            : "rounded-tl-sm bg-white text-stone-800 dark:bg-stone-800 dark:text-stone-100"
+        }`}
+      >
+        {!isMe && msg.fromName && (
+          <p className="mb-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+            {msg.fromName}
+          </p>
+        )}
+
+        {msg.forwarded && (
+          <p className="mb-0.5 flex items-center gap-1 text-[10px] italic text-stone-400">
+            <Forward size={10} /> Forwarded
+          </p>
+        )}
+
+        {typeIcon && (
+          <span className="mb-1 flex items-center gap-1 text-[10px] text-stone-400">
+            {typeIcon} {msg.type}
+            {msg.audioFile && (
+              <a
+                href={msg.audioFile}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="ml-1 underline"
+              >
+                Play
+              </a>
+            )}
+          </span>
+        )}
+
+        {msg.body && <p className="whitespace-pre-wrap wrap-break-word">{msg.body}</p>}
+
+        <p className={`mt-0.5 text-right text-[10px] ${isMe ? "text-emerald-600/70 dark:text-emerald-300/60" : "text-stone-400"}`}>
+          {time}
+          {msg.source && <span className="ml-1">• {msg.source}</span>}
+        </p>
+      </div>
+    </div>
   );
 }
 

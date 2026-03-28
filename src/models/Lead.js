@@ -10,6 +10,11 @@ const NoteSchema = new mongoose.Schema(
 
 const TimelineSchema = new mongoose.Schema(
   {
+    actor: {
+      userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+      name: { type: String, default: "" },
+      role: { type: String, enum: ["admin", "sales", "student", ""], default: "" },
+    },
     type: {
       type: String,
       enum: [
@@ -87,7 +92,7 @@ const LeadSchema = new mongoose.Schema(
     tags: [{ type: String, trim: true }],
     notes: [NoteSchema],
     timeline: [TimelineSchema],
-    assignedTo: { type: String, trim: true, default: "" },
+    assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
     followUpDate: { type: Date, default: null },
     persona: {
       type: String,
