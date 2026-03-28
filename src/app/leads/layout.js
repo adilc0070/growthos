@@ -10,8 +10,13 @@ export default function LeadsLayout({ children }) {
   return (
     <div className="flex min-h-screen bg-stone-50 dark:bg-stone-950">
       <AppSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      {/* Reserve width for fixed sidebar on lg+ (fixed nodes don’t consume flex space). */}
+      <div
+        className="hidden w-60 shrink-0 lg:block"
+        aria-hidden
+      />
 
-      <div className="flex flex-1 flex-col lg:pl-60">
+      <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-stone-200 bg-white/90 px-4 backdrop-blur-md dark:border-stone-800 dark:bg-stone-950/90 lg:px-6">
           <button
             onClick={() => setSidebarOpen(true)}

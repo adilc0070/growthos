@@ -5,6 +5,9 @@
   --foreground: #0c0a09;
   --accent: #059669;
   --accent-muted: #d1fae5;
+  --scrollbar-track: #e7e5e4;
+  --scrollbar-thumb: #a8a29e;
+  --scrollbar-thumb-hover: #059669;
 }
 
 @theme inline {
@@ -20,12 +23,44 @@
     --foreground: #fafaf9;
     --accent: #34d399;
     --accent-muted: #064e3b;
+    --scrollbar-track: #1c1917;
+    --scrollbar-thumb: #44403c;
+    --scrollbar-thumb-hover: #34d399;
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+  border-radius: 9999px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 9999px;
+  border: 2px solid var(--scrollbar-track);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+*::-webkit-scrollbar-corner {
+  background: var(--scrollbar-track);
 }
 
 .input {
