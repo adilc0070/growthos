@@ -13,8 +13,20 @@ async function request(url, opts = {}) {
 }
 
 export function fetchLeads({
-  source, courseInterest, search,
-  temperature, persona, minScore, maxScore, adSource,
+  source,
+  courseInterest,
+  search,
+  temperature,
+  persona,
+  minScore,
+  maxScore,
+  adSource,
+  status,
+  assignedTo,
+  createdFrom,
+  createdTo,
+  urgency,
+  engagement,
 } = {}) {
   const params = new URLSearchParams();
   if (source && source !== "all") params.set("source", source);
@@ -23,6 +35,13 @@ export function fetchLeads({
   if (temperature && temperature !== "all") params.set("temperature", temperature);
   if (persona && persona !== "all") params.set("persona", persona);
   if (adSource && adSource !== "all") params.set("adSource", adSource);
+  if (status && status !== "all") params.set("status", status);
+  if (assignedTo && assignedTo !== "all")
+    params.set("assignedTo", assignedTo);
+  if (createdFrom) params.set("createdFrom", createdFrom);
+  if (createdTo) params.set("createdTo", createdTo);
+  if (urgency && urgency !== "all") params.set("urgency", urgency);
+  if (engagement && engagement !== "all") params.set("engagement", engagement);
   if (minScore) params.set("minScore", minScore);
   if (maxScore) params.set("maxScore", maxScore);
   if (search) params.set("search", search);
@@ -87,6 +106,10 @@ export function rescoreAllLeads() {
 
 export function seedLeads() {
   return request(`${BASE}/seed`, { method: "POST" });
+}
+
+export function fetchAssignableUsers() {
+  return request("/api/users/assignable");
 }
 
 export function fetchMessages(leadId) {

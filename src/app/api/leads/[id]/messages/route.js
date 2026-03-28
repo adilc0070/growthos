@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import ChatMessage from "@/models/ChatMessage";
-import { requireRole } from "@/lib/auth";
+import { requireAutomationOrSession } from "@/lib/automation-auth";
 
-export async function GET(_request, { params }) {
-  const { session, error } = await requireRole("admin", "sales");
-  if (error) return error;
+export async function GET(request, { params }) {
+  const auth = await requireAutomationOrSession(request);
+  if (!auth.ok) return auth.error;
   await dbConnect();
 
   const { id } = await params;

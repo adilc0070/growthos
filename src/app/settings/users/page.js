@@ -13,6 +13,7 @@ import {
   X,
   AlertCircle,
   CheckCircle2,
+  Phone,
 } from "lucide-react";
 
 const ROLE_CONFIG = {
@@ -124,6 +125,12 @@ export default function UsersPage() {
                 <p className="truncate text-xs text-stone-500 dark:text-stone-400">
                   {user.email}
                 </p>
+                {user.whatsapp && (
+                  <p className="flex items-center gap-1 text-xs text-stone-400 dark:text-stone-500">
+                    <Phone size={10} />
+                    {user.whatsapp}
+                  </p>
+                )}
               </div>
 
               <span
@@ -220,6 +227,7 @@ function UserFormModal({ user, onClose, onDone }) {
     email: user?.email || "",
     password: "",
     role: user?.role || "sales",
+    whatsapp: user?.whatsapp || "",
   });
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -237,8 +245,8 @@ function UserFormModal({ user, onClose, onDone }) {
       const url = editing ? `/api/users/${user._id}` : "/api/users";
       const method = editing ? "PUT" : "POST";
       const body = editing
-        ? { name: form.name, role: form.role, ...(form.password ? { password: form.password } : {}) }
-        : { name: form.name, email: form.email, password: form.password, role: form.role };
+        ? { name: form.name, role: form.role, whatsapp: form.whatsapp, ...(form.password ? { password: form.password } : {}) }
+        : { name: form.name, email: form.email, password: form.password, role: form.role, whatsapp: form.whatsapp };
 
       const res = await fetch(url, {
         method,
@@ -311,6 +319,22 @@ function UserFormModal({ user, onClose, onDone }) {
               />
             </label>
           )}
+
+          <label className="block space-y-1">
+            <span className="text-xs font-medium text-stone-600 dark:text-stone-400">
+              WhatsApp Number
+            </span>
+            <div className="relative">
+              <Phone size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+              <input
+                type="tel"
+                value={form.whatsapp}
+                onChange={set("whatsapp")}
+                placeholder="+91 9876543210"
+                className="input pl-9"
+              />
+            </div>
+          </label>
 
           <label className="block space-y-1">
             <span className="text-xs font-medium text-stone-600 dark:text-stone-400">

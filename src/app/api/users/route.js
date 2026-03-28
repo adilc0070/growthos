@@ -22,7 +22,7 @@ export async function POST(request) {
   if (error) return error;
 
   await dbConnect();
-  const { name, email, password, role } = await request.json();
+  const { name, email, password, role, whatsapp } = await request.json();
 
   if (!name?.trim() || !email?.trim() || !password) {
     return NextResponse.json(
@@ -59,6 +59,7 @@ export async function POST(request) {
     email: email.toLowerCase().trim(),
     password: hash,
     role,
+    whatsapp: whatsapp?.trim() || "",
     isActive: true,
     createdBy: session.user.id,
   });
@@ -69,6 +70,7 @@ export async function POST(request) {
       name: user.name,
       email: user.email,
       role: user.role,
+      whatsapp: user.whatsapp,
       isActive: user.isActive,
       createdAt: user.createdAt,
     },

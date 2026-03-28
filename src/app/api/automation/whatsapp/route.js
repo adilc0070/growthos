@@ -3,6 +3,7 @@ import dbConnect from "@/lib/mongodb";
 import Lead from "@/models/Lead";
 import ChatMessage from "@/models/ChatMessage";
 import { computeAndApplyScore } from "@/lib/lead-scoring";
+import { requireAutomationOrSession } from "@/lib/automation-auth";
 
 function normalizePhone(raw) {
   if (!raw) return "";
@@ -44,6 +45,9 @@ async function findOrCreateLead({ from, to, fromName, fromMe, source }) {
 
 export async function POST(request) {
   try {
+    const auth = await requireAutomationOrSession(request);
+    if (!auth.ok) return auth.error;
+
     await dbConnect();
     const body = await request.json();
 

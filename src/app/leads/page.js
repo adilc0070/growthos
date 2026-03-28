@@ -5,7 +5,7 @@ import { STATUSES } from "@/lib/leads-data";
 import * as api from "@/lib/leads-api";
 import KanbanBoard from "@/components/leads/kanban-board";
 import LeadDetail from "@/components/leads/lead-detail";
-import LeadFilters from "@/components/leads/lead-filters";
+import LeadFilters, { LEAD_FILTER_DEFAULTS } from "@/components/leads/lead-filters";
 import AddLeads from "@/components/leads/add-leads";
 import QualificationForm from "@/components/leads/qualification-form";
 import WhatsAppBulkUpload from "@/components/leads/whatsapp-bulk-upload";
@@ -25,12 +25,7 @@ export default function LeadsPage() {
   const [showWhatsApp, setShowWhatsApp] = useState(false);
 
   const [search, setSearch] = useState("");
-  const [filters, setFilters] = useState({
-    source: "all",
-    courseInterest: "all",
-    temperature: "all",
-    persona: "all",
-  });
+  const [filters, setFilters] = useState({ ...LEAD_FILTER_DEFAULTS });
 
   const loadLeads = useCallback(async () => {
     try {
@@ -40,6 +35,15 @@ export default function LeadsPage() {
         courseInterest: filters.courseInterest,
         temperature: filters.temperature,
         persona: filters.persona,
+        adSource: filters.adSource,
+        status: filters.status,
+        assignedTo: filters.assignedTo,
+        createdFrom: filters.createdFrom || undefined,
+        createdTo: filters.createdTo || undefined,
+        minScore: filters.minScore || undefined,
+        maxScore: filters.maxScore || undefined,
+        urgency: filters.urgency,
+        engagement: filters.engagement,
         search: search || undefined,
       });
       setLeads(data);
@@ -213,12 +217,7 @@ export default function LeadsPage() {
       </div>
 
       {/* Filters */}
-      <LeadFilters
-        filters={filters}
-        onChange={setFilters}
-        totalCount={leads.length}
-        filteredCount={leads.length}
-      />
+      <LeadFilters filters={filters} onChange={setFilters} resultCount={leads.length} />
 
       {/* Kanban */}
       <KanbanBoard

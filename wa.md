@@ -1,12 +1,40 @@
-## API Documentation
+## WhatsApp automation API
 
 ---
 
-### 1. Single WhatsApp Message
+### Authentication
+
+Both `POST /api/automation/whatsapp` and `GET /api/leads/:id/messages` use the same rules.
+
+**Option A — Browser (in-app)**  
+Signed in as **admin** or **sales**. Session cookies are sent automatically for same-origin requests (e.g. Leads page, Chat tab, WhatsApp Upload modal).
+
+**Option B — Server / webhook (no browser)**  
+Set `AUTOMATION_API_SECRET` in `.env.local` (or your host’s env) to a long random string. Send that value using **one** of:
+
+| Header | Example |
+|--------|---------|
+| `Authorization` | `Bearer <AUTOMATION_API_SECRET>` |
+| `X-Automation-Secret` | `<AUTOMATION_API_SECRET>` |
+| `X-Webhook-Secret` | `<AUTOMATION_API_SECRET>` |
+
+If `AUTOMATION_API_SECRET` is **set**, callers without a valid admin/sales session **must** send the secret. Wrong secret → **403**; missing secret → **401**.
+
+If `AUTOMATION_API_SECRET` is **not** set, only signed-in admin/sales can call these routes (webhooks should set the secret in production).
+
+---
+
+### 1. Single WhatsApp message
 
 **Endpoint:** `POST /api/automation/whatsapp`
 
-**Request:**
+**Headers (webhook):**
+```http
+Content-Type: application/json
+Authorization: Bearer <AUTOMATION_API_SECRET>
+```
+
+**Request body:**
 ```json
 {
   "from_me": false,
@@ -32,20 +60,36 @@
 }
 ```
 
-**Error Response (400):**
+**Error (400):**
 ```json
 {
   "error": "Either 'from' or 'to' is required"
 }
 ```
 
+**Error (401) — missing auth when secret is configured:**
+```json
+{
+  "error": "Unauthorized. Send Authorization: Bearer <secret> or X-Automation-Secret header, or sign in as admin/sales."
+}
+```
+
+**Error (403) — wrong secret:**
+```json
+{
+  "error": "Invalid automation secret"
+}
+```
+
 ---
 
-### 2. Bulk WhatsApp Messages
+### 2. Bulk WhatsApp messages
 
-**Endpoint:** `POST /api/automation/whatsapp`
+**Endpoint:** `POST /api/automation/whatsapp` (same URL; body is a **JSON array**)
 
-**Request:**
+**Headers:** Same as single message (session or `Authorization` / secret headers).
+
+**Request body:**
 ```json
 [
   {
@@ -96,7 +140,7 @@
 }
 ```
 
-**Response with partial errors (201):**
+**Response (201) with per-row errors:**
 ```json
 {
   "processed": 2,
@@ -110,7 +154,7 @@
 }
 ```
 
-**Error Response (400):**
+**Error (400):**
 ```json
 {
   "error": "Maximum 1000 messages per request"
@@ -119,13 +163,16 @@
 
 ---
 
-### 3. Get Chat Messages for a Lead
+### 3. Get chat messages for a lead
 
 **Endpoint:** `GET /api/leads/:id/messages`
 
-**Headers:** Requires authenticated session (admin or sales role)
+**Headers (webhook / API client):**
+```http
+Authorization: Bearer <AUTOMATION_API_SECRET>
+```
 
-**Request:** No body — just the lead ID in the URL.
+**Request:** No body. Lead ID in the path, for example:
 
 ```
 GET /api/leads/6836a1b2c4e5f7890abcdef1/messages
@@ -171,21 +218,16 @@ GET /api/leads/6836a1b2c4e5f7890abcdef1/messages
 ]
 ```
 
-**Error Response (401):**
-```json
-{
-  "error": "Unauthorized"
-}
-```
+**Error (401 / 403):** Same patterns as section 1 (missing or invalid secret, or not admin/sales when secret is unset).
 
 ---
 
-### Quick Reference
+### Quick reference
 
 | # | Method | Endpoint | Auth | Purpose |
 |---|--------|----------|------|---------|
-| 1 | `POST` | `/api/automation/whatsapp` | None | Single message — auto-creates lead if new |
-| 2 | `POST` | `/api/automation/whatsapp` | None | Bulk messages (send array) — up to 1000 |
-| 3 | `GET` | `/api/leads/:id/messages` | Admin/Sales | Fetch all chat messages for a lead |
+| 1 | `POST` | `/api/automation/whatsapp` | Session (admin/sales) **or** `AUTOMATION_API_SECRET` | Single message object — auto-creates lead if needed |
+| 2 | `POST` | `/api/automation/whatsapp` | Same | Bulk: JSON array, max 1000 messages |
+| 3 | `GET` | `/api/leads/:id/messages` | Same | List chat messages for a lead (oldest first) |
 
-The automation endpoint has no auth so external WhatsApp webhook services can call it directly. The messages read endpoint requires login.
+**Environment:** `AUTOMATION_API_SECRET` in `.env.local` (or deployment env). Use a strong random value in production; never commit real secrets to git.

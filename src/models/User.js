@@ -11,6 +11,7 @@ const UserSchema = new mongoose.Schema(
       trim: true,
     },
     password: { type: String, required: true },
+    whatsapp: { type: String, trim: true, default: "" },
     role: {
       type: String,
       enum: ["admin", "sales", "student"],

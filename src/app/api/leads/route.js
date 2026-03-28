@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import mongoose from "mongoose";
 import dbConnect from "@/lib/mongodb";
 import Lead from "@/models/Lead";
 import { computeAndApplyScore } from "@/lib/lead-scoring";
@@ -20,6 +21,12 @@ export async function GET(request) {
   const minScore = searchParams.get("minScore");
   const maxScore = searchParams.get("maxScore");
   const adSource = searchParams.get("adSource");
+  const status = searchParams.get("status");
+  const assignedTo = searchParams.get("assignedTo");
+  const createdFrom = searchParams.get("createdFrom");
+  const createdTo = searchParams.get("createdTo");
+  const urgency = searchParams.get("urgency");
+  const engagement = searchParams.get("engagement");
 
   const filter = {};
   if (source && source !== "all") filter.source = source;
@@ -28,6 +35,36 @@ export async function GET(request) {
   if (temperature && temperature !== "all") filter.temperature = temperature;
   if (persona && persona !== "all") filter.persona = persona;
   if (adSource && adSource !== "all") filter.adSource = adSource;
+  if (status && status !== "all") filter.status = status;
+  if (urgency && urgency !== "all") filter.urgency = urgency;
+  if (engagement && engagement !== "all") filter.engagement = engagement;
+
+  if (assignedTo === "unassigned") {
+    filter.assignedTo = null;
+  } else if (assignedTo && assignedTo !== "all") {
+    if (!mongoose.Types.ObjectId.isValid(assignedTo)) {
+      return NextResponse.json(
+        { error: "Invalid assignee filter" },
+        { status: 400 }
+      );
+    }
+    filter.assignedTo = assignedTo;
+  }
+
+  if (createdFrom || createdTo) {
+    filter.createdAt = {};
+    if (createdFrom) {
+      const from = new Date(createdFrom);
+      from.setHours(0, 0, 0, 0);
+      filter.createdAt.$gte = from;
+    }
+    if (createdTo) {
+      const to = new Date(createdTo);
+      to.setHours(23, 59, 59, 999);
+      filter.createdAt.$lte = to;
+    }
+  }
+
   if (minScore || maxScore) {
     filter.leadScore = {};
     if (minScore) filter.leadScore.$gte = Number(minScore);
@@ -44,7 +81,7 @@ export async function GET(request) {
   }
 
   const leads = await Lead.find(filter)
-    .populate("assignedTo", "name email role")
+    .populate("assignedTo", "name email role whatsapp")
     .sort({ createdAt: -1 })
     .lean();
   return NextResponse.json(leads);

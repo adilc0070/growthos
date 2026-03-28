@@ -24,6 +24,7 @@ export async function PUT(request, { params }) {
     }
     user.role = body.role;
   }
+  if (body.whatsapp !== undefined) user.whatsapp = body.whatsapp.trim();
   if (body.isActive !== undefined) user.isActive = body.isActive;
   if (body.password && body.password.length >= 6) {
     user.password = await bcrypt.hash(body.password, 12);
@@ -36,6 +37,7 @@ export async function PUT(request, { params }) {
     name: user.name,
     email: user.email,
     role: user.role,
+    whatsapp: user.whatsapp,
     isActive: user.isActive,
     createdAt: user.createdAt,
   });
