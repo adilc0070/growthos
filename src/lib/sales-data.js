@@ -282,8 +282,39 @@ export function formatDuration(seconds) {
   return m > 0 ? `${m}m ${s}s` : `${s}s`;
 }
 
+const SCRIPT_PLACEHOLDER_DEFAULTS = {
+  duration: "8-week",
+  batchDate: "our next batch",
+  seats: "limited",
+  offer: "a special offer",
+  nextBatchWeeks: "4",
+};
+
+/** Merge lead + user into placeholders used in seeded scripts ({name}, {course}, …). */
+export function buildSalesScriptContext(lead, user) {
+  const raw = (lead?.name || "").trim();
+  const first = raw.split(/\s+/)[0];
+  return {
+    ...SCRIPT_PLACEHOLDER_DEFAULTS,
+    name: first || "there",
+    salesperson: user?.name || "GrowthOS",
+    course: lead?.courseInterest || "our program",
+  };
+}
+
+/** Replace {key} tokens; unknown keys stay as {key} so you can edit before sending. */
+export function interpolateSalesScriptContent(template, ctx) {
+  if (!template) return "";
+  const merged = { ...SCRIPT_PLACEHOLDER_DEFAULTS, ...ctx };
+  return template.replace(/\{(\w+)\}/g, (_, key) => {
+    const v = merged[key];
+    return v != null && String(v) !== "" ? String(v) : `{${key}}`;
+  });
+}
+
 export function getWhatsAppUrl(phone, message) {
-  const cleaned = phone.replace(/[\s\-\(\)]/g, "");
+  if (!phone) return "#";
+  const cleaned = String(phone).replace(/[\s\-\(\)]/g, "");
   const num = cleaned.startsWith("+") ? cleaned.slice(1) : cleaned;
-  return `https://wa.me/${num}?text=${encodeURIComponent(message)}`;
+  return `https://wa.me/${num}?text=${encodeURIComponent(message ?? "")}`;
 }

@@ -69,6 +69,16 @@ export default function ScriptsLibrary() {
     setTimeout(() => setCopied(null), 2000);
   }
 
+  function openWhatsAppWithScript(script) {
+    const phone = window.prompt(
+      "Lead phone (country code included, e.g. 919876543210):",
+      ""
+    );
+    if (!phone?.trim()) return;
+    const url = getWhatsAppUrl(phone.trim(), script.content);
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -163,14 +173,14 @@ export default function ScriptsLibrary() {
                     {copied === script._id ? "Copied!" : "Copy"}
                   </button>
                   {script.whatsappReady && (
-                    <a
-                      href={getWhatsAppUrl("919876543210", script.content)}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <button
+                      type="button"
+                      onClick={() => openWhatsAppWithScript(script)}
+                      title="Opens WhatsApp after you enter the lead phone. From Leads, use Send pitch to use this lead's number automatically."
                       className="flex items-center gap-1.5 rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700"
                     >
                       <MessageCircle size={14} /> Send via WhatsApp
-                    </a>
+                    </button>
                   )}
                   <div className="ml-auto flex items-center gap-1">
                     <button

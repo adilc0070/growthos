@@ -6,6 +6,12 @@ import {
   formatDateTime, formatDate, isOverdue,
 } from "@/lib/leads-data";
 import * as leadsApi from "@/lib/leads-api";
+import * as salesApi from "@/lib/sales-api";
+import {
+  getWhatsAppUrl,
+  buildSalesScriptContext,
+  interpolateSalesScriptContent,
+} from "@/lib/sales-data";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import {
@@ -65,6 +71,9 @@ export default function LeadDetail({
   const [assigning, setAssigning] = useState(false);
   const [chatMessages, setChatMessages] = useState([]);
   const [chatLoading, setChatLoading] = useState(false);
+  const [waScripts, setWaScripts] = useState([]);
+  const [waScriptsLoading, setWaScriptsLoading] = useState(false);
+  const [selectedPitchId, setSelectedPitchId] = useState("");
   const { data: session } = useSession();
   const canAssign = session?.user?.role === "admin" || session?.user?.role === "sales";
 
@@ -96,6 +105,51 @@ export default function LeadDetail({
       .catch(() => setChatMessages([]))
       .finally(() => setChatLoading(false));
   }, [tab, lead._id, lead.id]);
+
+  useEffect(() => {
+    setSelectedPitchId("");
+  }, [lead._id, lead.id]);
+
+  useEffect(() => {
+    if (!lead?.phone) {
+      setWaScripts([]);
+      return;
+    }
+    let cancelled = false;
+    setWaScriptsLoading(true);
+    salesApi
+      .fetchScripts("all")
+      .then((list) => {
+        if (!cancelled) {
+          setWaScripts((list || []).filter((s) => s.whatsappReady));
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setWaScripts([]);
+      })
+      .finally(() => {
+        if (!cancelled) setWaScriptsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [lead?.phone, lead._id, lead.id]);
+
+  function handleSendPitchWhatsApp() {
+    const script = waScripts.find((s) => s._id === selectedPitchId);
+    if (!script || !lead.phone) return;
+    const ctx = buildSalesScriptContext(lead, session?.user);
+    const text = interpolateSalesScriptContent(script.content, ctx);
+    const url = getWhatsAppUrl(lead.phone, text);
+    window.open(url, "_blank", "noopener,noreferrer");
+    const id = lead._id || lead.id;
+    salesApi
+      .logWhatsAppSend(id, { message: text, scriptTitle: script.title })
+      .then((res) => {
+        if (onLeadUpdated && res?.lead) onLeadUpdated(res.lead);
+      })
+      .catch(() => {});
+  }
 
   function handleAddNote(e) {
     e.preventDefault();
@@ -176,6 +230,52 @@ export default function LeadDetail({
             <X size={18} />
           </button>
         </div>
+
+        {lead.phone && (
+          <div className="border-b border-stone-200 px-4 py-2.5 dark:border-stone-800">
+            <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-stone-500 dark:text-stone-400">
+              Send pitch on WhatsApp
+            </p>
+            {waScriptsLoading ? (
+              <p className="text-xs text-stone-400">Loading scripts…</p>
+            ) : waScripts.length === 0 ? (
+              <p className="text-xs text-stone-500 dark:text-stone-400">
+                No WhatsApp-ready scripts. Enable &quot;WhatsApp ready&quot; on a script in{" "}
+                <Link
+                  href="/sales"
+                  className="font-medium text-emerald-700 underline underline-offset-2 dark:text-emerald-400"
+                >
+                  Sales → Scripts
+                </Link>
+                .
+              </p>
+            ) : (
+              <div className="flex flex-wrap items-center gap-2">
+                <select
+                  value={selectedPitchId}
+                  onChange={(e) => setSelectedPitchId(e.target.value)}
+                  className="input min-w-0 flex-1 py-1.5 text-xs"
+                >
+                  <option value="">Choose a script…</option>
+                  {waScripts.map((s) => (
+                    <option key={s._id} value={s._id}>
+                      {s.title}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  disabled={!selectedPitchId}
+                  onClick={handleSendPitchWhatsApp}
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-[#25D366] px-3 py-2 text-xs font-medium text-white transition hover:bg-[#20bd5a] disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <Send size={14} />
+                  Send
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Score bar */}
         <div className="border-b border-stone-200 px-4 py-3 dark:border-stone-800">
