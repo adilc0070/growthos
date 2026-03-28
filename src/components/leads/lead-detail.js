@@ -7,6 +7,7 @@ import {
 } from "@/lib/leads-data";
 import * as leadsApi from "@/lib/leads-api";
 import { useSession } from "next-auth/react";
+import Link from "next/link";
 import {
   X,
   Phone,
@@ -29,7 +30,24 @@ import {
   Mic,
   Video,
   FileText,
+  BookOpen,
 } from "lucide-react";
+
+function phoneDigits(phone) {
+  if (!phone) return "";
+  return String(phone).replace(/\D/g, "");
+}
+
+function telHref(phone) {
+  if (!phone) return null;
+  const compact = String(phone).replace(/[\s().-]/g, "");
+  return compact ? `tel:${compact}` : null;
+}
+
+function waMeHref(phone) {
+  const d = phoneDigits(phone);
+  return d ? `https://wa.me/${d}` : null;
+}
 
 export default function LeadDetail({
   lead,
@@ -109,15 +127,46 @@ export default function LeadDetail({
                 </span>
               )}
             </div>
-            <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-stone-500 dark:text-stone-400">
-              <span className="flex items-center gap-1">
-                <Phone size={13} /> {lead.phone}
-              </span>
+            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-stone-500 dark:text-stone-400">
+              {lead.phone && (
+                <span className="flex flex-wrap items-center gap-1.5">
+                  <Phone size={13} className="shrink-0" />
+                  {telHref(lead.phone) ? (
+                    <a
+                      href={telHref(lead.phone)}
+                      className="font-medium text-emerald-700 underline-offset-2 hover:underline dark:text-emerald-400"
+                    >
+                      {lead.phone}
+                    </a>
+                  ) : (
+                    <span>{lead.phone}</span>
+                  )}
+                  {waMeHref(lead.phone) && (
+                    <a
+                      href={waMeHref(lead.phone)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 rounded-md bg-[#25D366]/15 px-2 py-0.5 text-xs font-medium text-[#075e54] hover:bg-[#25D366]/25 dark:bg-[#25D366]/20 dark:text-[#25D366]"
+                      title="Open WhatsApp chat"
+                    >
+                      <MessageCircle size={12} />
+                      WhatsApp
+                    </a>
+                  )}
+                </span>
+              )}
               {lead.email && (
                 <span className="flex items-center gap-1">
                   <Mail size={13} /> {lead.email}
                 </span>
               )}
+              <Link
+                href="/sales"
+                className="inline-flex items-center gap-1 rounded-md border border-stone-200 bg-stone-50 px-2 py-0.5 text-xs font-medium text-stone-700 transition hover:bg-stone-100 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
+              >
+                <BookOpen size={12} />
+                Sales pitches
+              </Link>
             </div>
           </div>
           <button
@@ -356,7 +405,12 @@ export default function LeadDetail({
           )}
 
           {tab === "chat" && (
-            <ChatPanel messages={chatMessages} loading={chatLoading} leadName={lead.name} />
+            <ChatPanel
+              messages={chatMessages}
+              loading={chatLoading}
+              leadName={lead.name}
+              phone={lead.phone}
+            />
           )}
 
           {tab === "scoring" && (
@@ -449,7 +503,10 @@ function TabButton({ active, onClick, icon, label }) {
   );
 }
 
-function ChatPanel({ messages, loading, leadName }) {
+function ChatPanel({ messages, loading, leadName, phone }) {
+  const tel = phone ? telHref(phone) : null;
+  const wa = phone ? waMeHref(phone) : null;
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -460,9 +517,33 @@ function ChatPanel({ messages, loading, leadName }) {
 
   if (messages.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
+      <div className="flex flex-col items-center justify-center gap-4 py-10 text-center">
         <MessageCircle size={28} className="text-stone-300 dark:text-stone-600" />
         <p className="text-sm text-stone-400">No WhatsApp messages yet</p>
+        {phone && (
+          <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
+            {tel && (
+              <a
+                href={tel}
+                className="inline-flex items-center justify-center gap-2 rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200 dark:hover:bg-stone-800"
+              >
+                <Phone size={16} />
+                Call {phone}
+              </a>
+            )}
+            {wa && (
+              <a
+                href={wa}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#25D366] px-3 py-2 text-sm font-medium text-white transition hover:bg-[#20bd5a]"
+              >
+                <MessageCircle size={16} />
+                WhatsApp chat
+              </a>
+            )}
+          </div>
+        )}
       </div>
     );
   }
