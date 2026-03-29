@@ -171,13 +171,13 @@ export default function LeadsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-4 p-4 lg:p-6">
+    <div className="flex flex-col gap-4 p-3 sm:p-4 lg:p-6">
       {/* Top bar */}
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="relative flex-1 sm:max-w-xs">
+      <div className="flex flex-col gap-3 min-[480px]:flex-row min-[480px]:flex-wrap min-[480px]:items-center">
+        <div className="relative min-w-0 w-full min-[480px]:flex-1 min-[480px]:max-w-xs">
           <Search
             size={16}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400"
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none"
           />
           <input
             type="search"
@@ -185,32 +185,36 @@ export default function LeadsPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="input w-full pl-9"
+            enterKeyHint="search"
           />
         </div>
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="flex flex-wrap items-stretch gap-2 min-[480px]:ml-auto min-[480px]:justify-end">
           {leads.length === 0 && (
             <button
+              type="button"
               onClick={handleSeed}
               disabled={saving}
-              className="flex items-center gap-2 rounded-lg border border-stone-300 px-3 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-800"
+              className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg border border-stone-300 px-3 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50 min-[400px]:flex-initial dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-800"
             >
-              <Database size={16} />
-              Seed demo data
+              <Database size={16} className="shrink-0" />
+              <span className="truncate">Seed demo</span>
             </button>
           )}
           <button
+            type="button"
             onClick={() => setShowWhatsApp(true)}
-            className="flex items-center gap-2 rounded-lg border border-green-300 bg-green-50 px-3 py-2 text-sm font-medium text-green-700 shadow-sm transition hover:bg-green-100 dark:border-green-800 dark:bg-green-950/40 dark:text-green-300 dark:hover:bg-green-900/50"
+            className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg border border-green-300 bg-green-50 px-3 py-2 text-sm font-medium text-green-700 shadow-sm transition hover:bg-green-100 min-[400px]:flex-initial dark:border-green-800 dark:bg-green-950/40 dark:text-green-300 dark:hover:bg-green-900/50"
           >
-            <MessageCircle size={16} />
-            WhatsApp Upload
+            <MessageCircle size={16} className="shrink-0" />
+            <span className="truncate">WhatsApp</span>
           </button>
           <button
+            type="button"
             onClick={openAdd}
-            className="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-400"
+            className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-emerald-700 min-[400px]:flex-initial dark:bg-emerald-500 dark:hover:bg-emerald-400"
           >
-            <Plus size={16} />
+            <Plus size={16} className="shrink-0" />
             Add Lead
           </button>
         </div>

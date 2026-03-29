@@ -82,6 +82,14 @@ body {
   box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.15);
 }
 
+/* 16px+ on narrow viewports avoids iOS Safari zooming inputs on focus */
+@media (max-width: 639px) {
+  .input {
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+}
+
 .input::placeholder {
   color: #a8a29e;
 }

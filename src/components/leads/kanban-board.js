@@ -1,11 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { STATUSES, isOverdue, formatDate } from "@/lib/leads-data";
 import { Phone, Calendar, GripVertical } from "lucide-react";
 
+function useDragDropSupported() {
+  const [ok, setOk] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(hover: hover) and (pointer: fine)");
+    const sync = () => setOk(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+  return ok;
+}
+
 export default function KanbanBoard({ leads, onCardClick, onStatusChange }) {
   const [dragOverCol, setDragOverCol] = useState(null);
+  const dragDropSupported = useDragDropSupported();
 
   function handleDragStart(e, lead) {
     e.dataTransfer.setData("text/plain", lead._id || lead.id);
@@ -30,7 +43,12 @@ export default function KanbanBoard({ leads, onCardClick, onStatusChange }) {
   }
 
   return (
-    <div className="flex gap-3 overflow-x-auto pb-4">
+    <div
+      className="-mx-3 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-3 pb-4 pt-0.5 sm:mx-0 sm:px-0"
+      style={{ WebkitOverflowScrolling: "touch" }}
+      role="region"
+      aria-label="Lead pipeline columns"
+    >
       {STATUSES.map((status) => {
         const colLeads = leads.filter((l) => l.status === status.id);
         const isOver = dragOverCol === status.id;
@@ -38,7 +56,7 @@ export default function KanbanBoard({ leads, onCardClick, onStatusChange }) {
         return (
           <div
             key={status.id}
-            className={`flex w-72 min-w-[272px] flex-shrink-0 flex-col rounded-xl border bg-stone-50 transition-colors dark:bg-stone-900/50 ${
+            className={`flex w-[min(85vw,272px)] shrink-0 snap-start snap-always flex-col rounded-xl border bg-stone-50 transition-colors sm:w-72 dark:bg-stone-900/50 ${
               isOver
                 ? "border-emerald-400 bg-emerald-50/50 dark:border-emerald-600 dark:bg-emerald-950/20"
                 : "border-stone-200 dark:border-stone-800"
@@ -65,6 +83,7 @@ export default function KanbanBoard({ leads, onCardClick, onStatusChange }) {
                 <LeadCard
                   key={lead._id || lead.id}
                   lead={lead}
+                  draggable={dragDropSupported}
                   onClick={() => onCardClick(lead)}
                   onDragStart={handleDragStart}
                 />
@@ -107,7 +126,7 @@ function ScorePill({ score }) {
   );
 }
 
-function LeadCard({ lead, onClick, onDragStart }) {
+function LeadCard({ lead, draggable, onClick, onDragStart }) {
   const overdue = isOverdue(lead.followUpDate);
   const sourceBg =
     lead.source === "Ads"
@@ -118,10 +137,10 @@ function LeadCard({ lead, onClick, onDragStart }) {
 
   return (
     <div
-      draggable
-      onDragStart={(e) => onDragStart(e, lead)}
+      draggable={draggable}
+      onDragStart={draggable ? (e) => onDragStart(e, lead) : undefined}
       onClick={onClick}
-      className="group cursor-pointer rounded-lg border border-stone-200 bg-white p-3 shadow-sm transition hover:shadow-md active:opacity-80 dark:border-stone-700 dark:bg-stone-900"
+      className="group cursor-pointer touch-manipulation rounded-lg border border-stone-200 bg-white p-3 shadow-sm transition hover:shadow-md active:opacity-80 dark:border-stone-700 dark:bg-stone-900"
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-1.5 min-w-0">
@@ -132,7 +151,8 @@ function LeadCard({ lead, onClick, onDragStart }) {
           <ScorePill score={lead.leadScore || 0} />
           <GripVertical
             size={14}
-            className="text-stone-300 opacity-0 transition group-hover:opacity-100 dark:text-stone-600"
+            className="shrink-0 text-stone-300 opacity-50 transition group-hover:opacity-100 max-sm:opacity-60 sm:opacity-0 sm:group-hover:opacity-100 dark:text-stone-600"
+            aria-hidden
           />
         </div>
       </div>

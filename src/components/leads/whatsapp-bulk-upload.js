@@ -42,8 +42,9 @@ const SAMPLE_DATA = [
 function Tab({ active, onClick, icon, label }) {
   return (
     <button
+      type="button"
       onClick={onClick}
-      className={`flex flex-1 items-center justify-center gap-2 border-b-2 py-2.5 text-sm font-medium transition ${
+      className={`flex flex-1 touch-manipulation items-center justify-center gap-2 border-b-2 py-2.5 text-sm font-medium transition ${
         active
           ? "border-emerald-600 text-emerald-700 dark:border-emerald-400 dark:text-emerald-300"
           : "border-transparent text-stone-400 hover:text-stone-600 dark:text-stone-500 dark:hover:text-stone-300"
@@ -149,17 +150,18 @@ export default function WhatsAppBulkUpload({ onClose, onDone }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 pt-16">
-      <div className="w-full max-w-lg rounded-xl border border-stone-200 bg-white shadow-xl dark:border-stone-700 dark:bg-stone-900">
+    <div className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-black/50 p-0 sm:items-start sm:p-4 sm:pt-16">
+      <div className="max-h-[92dvh] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-stone-200 border-b-0 bg-white pb-[env(safe-area-inset-bottom)] shadow-xl sm:max-h-[calc(100dvh-4rem)] sm:rounded-xl sm:border-b dark:border-stone-700 dark:bg-stone-900">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-stone-200 px-5 py-3 dark:border-stone-700">
+        <div className="flex items-center justify-between border-b border-stone-200 px-4 py-3 dark:border-stone-700 sm:px-5">
           <h2 className="flex items-center gap-2 text-base font-semibold">
             <MessageCircle size={18} className="text-green-600" />
             WhatsApp Bulk Upload
           </h2>
           <button
+            type="button"
             onClick={onClose}
-            className="rounded-md p-1 text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800"
+            className="touch-manipulation rounded-md p-1 text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800"
           >
             <X size={18} />
           </button>
@@ -181,7 +183,7 @@ export default function WhatsAppBulkUpload({ onClose, onDone }) {
           />
         </div>
 
-        <div className="space-y-4 p-5">
+        <div className="space-y-4 p-4 sm:p-5">
           {/* Template download */}
           <button
             onClick={downloadTemplate}

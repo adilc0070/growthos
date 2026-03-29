@@ -38,9 +38,9 @@ export default function QualificationForm({ lead, onSubmit, onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 pt-20">
-      <div className="w-full max-w-lg rounded-xl border border-stone-200 bg-white shadow-xl dark:border-stone-700 dark:bg-stone-900">
-        <div className="flex items-center justify-between border-b border-stone-200 px-5 py-3 dark:border-stone-700">
+    <div className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-black/50 p-0 sm:items-start sm:p-4 sm:pt-20">
+      <div className="max-h-[92dvh] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-stone-200 border-b-0 bg-white pb-[env(safe-area-inset-bottom)] shadow-xl sm:max-h-[calc(100dvh-5rem)] sm:rounded-xl sm:border-b dark:border-stone-700 dark:bg-stone-900">
+        <div className="flex items-center justify-between border-b border-stone-200 px-4 py-3 dark:border-stone-700 sm:px-5">
           <div className="flex items-center gap-2">
             <ClipboardCheck size={18} className="text-emerald-600" />
             <div>
@@ -49,14 +49,15 @@ export default function QualificationForm({ lead, onSubmit, onClose }) {
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="rounded-md p-1 text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800"
+            className="touch-manipulation rounded-md p-1 text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800"
           >
             <X size={18} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 p-5">
+        <form onSubmit={handleSubmit} className="space-y-4 p-4 sm:p-5">
           <Field label="Current Situation">
             <textarea
               value={form.currentSituation}

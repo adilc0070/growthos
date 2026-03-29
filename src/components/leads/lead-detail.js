@@ -164,12 +164,12 @@ export default function LeadDetail({
         className="fixed inset-0 z-40 bg-black/40"
         onClick={onClose}
       />
-      <div className="fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col border-l border-stone-200 bg-white shadow-xl dark:border-stone-800 dark:bg-stone-950 sm:max-w-lg">
+      <div className="fixed inset-y-0 right-0 z-50 flex max-h-[100dvh] w-full max-w-md flex-col border-l border-stone-200 bg-white pt-[env(safe-area-inset-top)] shadow-xl dark:border-stone-800 dark:bg-stone-950 sm:max-w-lg">
         {/* Header */}
-        <div className="flex items-start justify-between border-b border-stone-200 p-4 dark:border-stone-800">
+        <div className="flex items-start justify-between gap-3 border-b border-stone-200 p-4 dark:border-stone-800">
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-semibold leading-tight">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="break-words text-lg font-semibold leading-tight">
                 {lead.name}
               </h2>
               {temp && (
@@ -224,8 +224,9 @@ export default function LeadDetail({
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="shrink-0 rounded-md p-1 text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800"
+            className="touch-manipulation shrink-0 rounded-md p-1 text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800"
           >
             <X size={18} />
           </button>
@@ -338,8 +339,8 @@ export default function LeadDetail({
         </div>
 
         {/* Assignment */}
-        <div className="flex items-center justify-between gap-3 border-b border-stone-200 px-4 py-3 dark:border-stone-800">
-          <p className="flex items-center gap-2 text-xs font-medium text-stone-500 dark:text-stone-400">
+        <div className="flex flex-col gap-2 border-b border-stone-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3 dark:border-stone-800">
+          <p className="flex shrink-0 items-center gap-2 text-xs font-medium text-stone-500 dark:text-stone-400">
             <UserRound size={14} />
             Assigned to
           </p>
@@ -360,7 +361,7 @@ export default function LeadDetail({
                   setAssigning(false);
                 }
               }}
-              className="input max-w-[240px]"
+              className="input min-w-0 w-full sm:max-w-[240px]"
             >
               <option value="">Unassigned</option>
               {assignableUsers.map((u) => (
@@ -419,7 +420,7 @@ export default function LeadDetail({
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-stone-200 dark:border-stone-800">
+        <div className="-mx-px flex overflow-x-auto overscroll-x-contain border-b border-stone-200 dark:border-stone-800 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <TabButton
             active={tab === "timeline"}
             onClick={() => setTab("timeline")}
@@ -447,7 +448,7 @@ export default function LeadDetail({
         </div>
 
         {/* Tab content */}
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="min-h-0 flex-1 overflow-y-auto p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
           {tab === "timeline" && (
             <ol className="relative border-l-2 border-stone-200 pl-6 dark:border-stone-800">
               {[...(lead.timeline || [])].reverse().map((entry) => (
@@ -590,11 +591,12 @@ function ScoreRow({ label, value }) {
 function TabButton({ active, onClick, icon, label }) {
   return (
     <button
+      type="button"
       onClick={onClick}
-      className={`flex flex-1 items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition ${
+      className={`flex shrink-0 touch-manipulation items-center justify-center gap-1.5 whitespace-nowrap px-3 py-2.5 text-xs font-medium transition sm:flex-1 ${
         active
           ? "border-b-2 border-emerald-600 text-emerald-700 dark:border-emerald-400 dark:text-emerald-300"
-          : "text-stone-400 hover:text-stone-600 dark:text-stone-500 dark:hover:text-stone-300"
+          : "border-b-2 border-transparent text-stone-400 hover:text-stone-600 dark:text-stone-500 dark:hover:text-stone-300"
       }`}
     >
       {icon}

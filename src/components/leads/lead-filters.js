@@ -97,7 +97,7 @@ export default function LeadFilters({ filters, onChange, resultCount }) {
       className="rounded-xl border border-stone-200 bg-stone-50/90 shadow-sm dark:border-stone-800 dark:bg-stone-900/50"
       aria-label="Lead filters"
     >
-      <div className="flex flex-col gap-3 border-b border-stone-200/80 px-4 py-3 dark:border-stone-800 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 border-b border-stone-200/80 px-3 py-3 dark:border-stone-800 sm:flex-row sm:items-center sm:justify-between sm:px-4">
         <div className="flex items-start gap-3">
           <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-white text-stone-600 shadow-sm ring-1 ring-stone-200 dark:bg-stone-800 dark:text-stone-300 dark:ring-stone-700">
             <Filter size={18} strokeWidth={2} />
@@ -139,7 +139,7 @@ export default function LeadFilters({ filters, onChange, resultCount }) {
         </div>
       </div>
 
-      <div className="space-y-5 p-4">
+      <div className="space-y-5 p-3 sm:p-4">
         <div>
           <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-stone-500 dark:text-stone-400">
             <Users size={12} />
