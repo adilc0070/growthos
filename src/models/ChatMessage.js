@@ -17,7 +17,7 @@ const ChatMessageSchema = new mongoose.Schema(
     fromName: { type: String, default: "" },
     type: {
       type: String,
-      enum: ["text", "audio", "video", "voice", "image", "document"],
+      enum: ["text", "audio", "video", "voice", "image", "document","unknown","link_preview"],
       default: "text",
     },
     audioFile: { type: String, default: "" },
