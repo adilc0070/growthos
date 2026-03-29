@@ -18,6 +18,12 @@ export const metadata = {
     "Course business operating system: leads, sales, students, proof, and scaling in one place.",
 };
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
+
 export default function RootLayout({ children }) {
   return (
     <html
