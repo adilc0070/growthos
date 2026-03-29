@@ -77,15 +77,6 @@ export default function LeadDetail({
   const { data: session } = useSession();
   const canAssign = session?.user?.role === "admin" || session?.user?.role === "sales";
 
-  if (!lead) return null;
-
-  const status = STATUSES.find((s) => s.id === lead.status);
-  const overdue = isOverdue(lead.followUpDate);
-  const temp = TEMPERATURES.find((t) => t.id === (lead.temperature || "cold"));
-  const personaInfo = PERSONAS.find((p) => p.id === lead.persona);
-  const adSourceInfo = AD_SOURCES.find((a) => a.id === lead.adSource);
-  const isQualified = !!lead.qualificationData?.qualifiedAt;
-
   useEffect(() => {
     if (!canAssign) return;
     fetch("/api/users/assignable")
@@ -95,7 +86,7 @@ export default function LeadDetail({
   }, [canAssign]);
 
   useEffect(() => {
-    if (tab !== "chat") return;
+    if (tab !== "chat" || !lead) return;
     const leadId = lead._id || lead.id;
     if (!leadId) return;
     setChatLoading(true);
@@ -104,11 +95,11 @@ export default function LeadDetail({
       .then((msgs) => setChatMessages(msgs))
       .catch(() => setChatMessages([]))
       .finally(() => setChatLoading(false));
-  }, [tab, lead._id, lead.id]);
+  }, [tab, lead?._id, lead?.id]);
 
   useEffect(() => {
     setSelectedPitchId("");
-  }, [lead._id, lead.id]);
+  }, [lead?._id, lead?.id]);
 
   useEffect(() => {
     if (!lead?.phone) {
@@ -133,7 +124,25 @@ export default function LeadDetail({
     return () => {
       cancelled = true;
     };
-  }, [lead?.phone, lead._id, lead.id]);
+  }, [lead?.phone, lead?._id, lead?.id]);
+
+  useEffect(() => {
+    if (!lead) return undefined;
+    function onKey(e) {
+      if (e.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [lead?._id, lead?.id, onClose]);
+
+  if (!lead) return null;
+
+  const status = STATUSES.find((s) => s.id === lead.status);
+  const overdue = isOverdue(lead.followUpDate);
+  const temp = TEMPERATURES.find((t) => t.id === (lead.temperature || "cold"));
+  const personaInfo = PERSONAS.find((p) => p.id === lead.persona);
+  const adSourceInfo = AD_SOURCES.find((a) => a.id === lead.adSource);
+  const isQualified = !!lead.qualificationData?.qualifiedAt;
 
   function handleSendPitchWhatsApp() {
     const script = waScripts.find((s) => s._id === selectedPitchId);
@@ -161,15 +170,33 @@ export default function LeadDetail({
   return (
     <>
       <div
-        className="fixed inset-0 z-40 bg-black/40"
+        role="presentation"
+        className="fixed inset-0 z-40 bg-stone-900/45 backdrop-blur-[2px] dark:bg-stone-950/60"
         onClick={onClose}
       />
-      <div className="fixed inset-y-0 right-0 z-50 flex max-h-[100dvh] w-full max-w-md flex-col border-l border-stone-200 bg-white pt-[env(safe-area-inset-top)] shadow-xl dark:border-stone-800 dark:bg-stone-950 sm:max-w-lg">
+      <div
+        className="fixed z-50 flex max-h-[100dvh] w-full flex-col bg-white shadow-2xl dark:bg-stone-950
+          max-sm:inset-x-0 max-sm:bottom-0 max-sm:top-[6dvh] max-sm:rounded-t-2xl max-sm:border-x-0 max-sm:border-b-0 max-sm:border-t max-sm:border-stone-200 max-sm:pt-0 dark:max-sm:border-stone-800
+          sm:inset-y-0 sm:right-0 sm:left-auto sm:top-0 sm:max-w-lg sm:rounded-none sm:border-l sm:border-stone-200 sm:pt-[env(safe-area-inset-top)] sm:shadow-xl dark:sm:border-stone-800"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="lead-detail-title"
+      >
+        <div
+          className="flex shrink-0 justify-center pt-2 pb-1 sm:hidden"
+          aria-hidden
+        >
+          <div className="h-1 w-11 rounded-full bg-stone-300 dark:bg-stone-600" />
+        </div>
+
         {/* Header */}
-        <div className="flex items-start justify-between gap-3 border-b border-stone-200 p-4 dark:border-stone-800">
+        <div className="flex shrink-0 items-start gap-3 border-b border-stone-200 bg-white px-3 py-3 dark:border-stone-800 dark:bg-stone-950 sm:px-4 sm:py-4">
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="break-words text-lg font-semibold leading-tight">
+              <h2
+                id="lead-detail-title"
+                className="break-words text-lg font-semibold leading-snug tracking-tight text-stone-900 dark:text-stone-50"
+              >
                 {lead.name}
               </h2>
               {temp && (
@@ -181,396 +208,431 @@ export default function LeadDetail({
                 </span>
               )}
             </div>
-            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-stone-500 dark:text-stone-400">
+            <div className="mt-2 space-y-2 text-sm text-stone-600 dark:text-stone-400">
               {lead.phone && (
-                <span className="flex flex-wrap items-center gap-1.5">
-                  <Phone size={13} className="shrink-0" />
-                  {telHref(lead.phone) ? (
-                    <a
-                      href={telHref(lead.phone)}
-                      className="font-medium text-emerald-700 underline-offset-2 hover:underline dark:text-emerald-400"
-                    >
-                      {lead.phone}
-                    </a>
-                  ) : (
-                    <span>{lead.phone}</span>
-                  )}
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-stone-100 px-2 py-1 dark:bg-stone-800/80">
+                    <Phone size={14} className="shrink-0 text-stone-500" />
+                    {telHref(lead.phone) ? (
+                      <a
+                        href={telHref(lead.phone)}
+                        className="min-w-0 font-medium text-emerald-700 underline-offset-2 hover:underline dark:text-emerald-400"
+                      >
+                        {lead.phone}
+                      </a>
+                    ) : (
+                      <span>{lead.phone}</span>
+                    )}
+                  </span>
                   {waMeHref(lead.phone) && (
                     <a
                       href={waMeHref(lead.phone)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 rounded-md bg-[#25D366]/15 px-2 py-0.5 text-xs font-medium text-[#075e54] hover:bg-[#25D366]/25 dark:bg-[#25D366]/20 dark:text-[#25D366]"
-                      title="Open WhatsApp chat"
+                      className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-[#25D366] px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition active:scale-[0.98] hover:bg-[#20bd5a]"
                     >
-                      <MessageCircle size={12} />
+                      <MessageCircle size={14} />
                       WhatsApp
                     </a>
                   )}
-                </span>
+                </div>
               )}
               {lead.email && (
-                <span className="flex items-center gap-1">
-                  <Mail size={13} /> {lead.email}
-                </span>
+                <div className="flex items-start gap-2 rounded-lg bg-stone-50 px-2 py-1.5 dark:bg-stone-900/60">
+                  <Mail size={14} className="mt-0.5 shrink-0 text-stone-500" />
+                  <span className="min-w-0 break-all text-sm">{lead.email}</span>
+                </div>
               )}
               <Link
                 href="/sales"
-                className="inline-flex items-center gap-1 rounded-md border border-stone-200 bg-stone-50 px-2 py-0.5 text-xs font-medium text-stone-700 transition hover:bg-stone-100 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
+                className="inline-flex min-h-9 w-fit max-w-full items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
               >
-                <BookOpen size={12} />
-                Sales pitches
+                <BookOpen size={14} />
+                Sales scripts
               </Link>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="touch-manipulation shrink-0 rounded-md p-1 text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800"
+            className="touch-manipulation -mr-1 -mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-full text-stone-500 transition hover:bg-stone-100 dark:hover:bg-stone-800"
           >
-            <X size={18} />
+            <X size={20} />
           </button>
         </div>
 
-        {lead.phone && (
-          <div className="border-b border-stone-200 px-4 py-2.5 dark:border-stone-800">
-            <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-stone-500 dark:text-stone-400">
-              Send pitch on WhatsApp
-            </p>
-            {waScriptsLoading ? (
-              <p className="text-xs text-stone-400">Loading scripts…</p>
-            ) : waScripts.length === 0 ? (
-              <p className="text-xs text-stone-500 dark:text-stone-400">
-                No WhatsApp-ready scripts. Enable &quot;WhatsApp ready&quot; on a script in{" "}
-                <Link
-                  href="/sales"
-                  className="font-medium text-emerald-700 underline underline-offset-2 dark:text-emerald-400"
-                >
-                  Sales → Scripts
-                </Link>
-                .
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain">
+          <div className="space-y-3 px-3 py-3 sm:space-y-4 sm:px-4 sm:py-4">
+            {lead.phone && (
+              <section className="rounded-xl border border-stone-200/90 bg-stone-50/80 p-3 dark:border-stone-800 dark:bg-stone-900/40">
+                <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-stone-500 dark:text-stone-400">
+                  Send pitch on WhatsApp
+                </p>
+                {waScriptsLoading ? (
+                  <p className="text-xs text-stone-400">Loading scripts…</p>
+                ) : waScripts.length === 0 ? (
+                  <p className="text-xs leading-relaxed text-stone-600 dark:text-stone-400">
+                    No WhatsApp-ready scripts. Enable in{" "}
+                    <Link
+                      href="/sales"
+                      className="font-medium text-emerald-700 underline underline-offset-2 dark:text-emerald-400"
+                    >
+                      Sales → Scripts
+                    </Link>
+                    .
+                  </p>
+                ) : (
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
+                    <select
+                      value={selectedPitchId}
+                      onChange={(e) => setSelectedPitchId(e.target.value)}
+                      className="input min-h-11 min-w-0 flex-1 py-2 text-sm"
+                    >
+                      <option value="">Choose a script…</option>
+                      {waScripts.map((s) => (
+                        <option key={s._id} value={s._id}>
+                          {s.title}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      disabled={!selectedPitchId}
+                      onClick={handleSendPitchWhatsApp}
+                      className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#20bd5a] disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
+                    >
+                      <Send size={16} />
+                      Send
+                    </button>
+                  </div>
+                )}
+              </section>
+            )}
+
+            <section className="rounded-xl border border-stone-200/90 bg-white p-3 dark:border-stone-800 dark:bg-stone-900/30">
+              <div className="flex items-center justify-between text-xs">
+                <span className="flex items-center gap-1.5 font-medium text-stone-600 dark:text-stone-400">
+                  <Gauge size={14} /> Lead score
+                </span>
+                <span className="font-bold tabular-nums text-stone-900 dark:text-stone-100">
+                  {lead.leadScore || 0}/100
+                </span>
+              </div>
+              <div className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-stone-200 dark:bg-stone-800">
+                <div
+                  className={`h-full rounded-full transition-all ${
+                    (lead.leadScore || 0) >= 65
+                      ? "bg-red-500"
+                      : (lead.leadScore || 0) >= 35
+                        ? "bg-amber-500"
+                        : "bg-sky-400"
+                  }`}
+                  style={{ width: `${lead.leadScore || 0}%` }}
+                />
+              </div>
+            </section>
+
+            <section className="rounded-xl border border-stone-200/90 bg-white p-3 dark:border-stone-800 dark:bg-stone-900/30">
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-stone-500 dark:text-stone-400">
+                Tags &amp; pipeline
               </p>
-            ) : (
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="-mx-1 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:thin]">
+                {status && (
+                  <span
+                    className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium ${status.lightBg} ${status.text} ${status.border}`}
+                  >
+                    <span className={`size-1.5 rounded-full ${status.color}`} />
+                    {status.label}
+                  </span>
+                )}
+                <SourceBadge source={lead.source} />
+                {personaInfo && (
+                  <span className="shrink-0 rounded-full bg-violet-100 px-2.5 py-1 text-xs font-medium text-violet-800 dark:bg-violet-900/50 dark:text-violet-200">
+                    {personaInfo.icon} {personaInfo.label}
+                  </span>
+                )}
+                {lead.budget && (
+                  <span className="shrink-0 rounded-full bg-stone-100 px-2.5 py-1 text-xs text-stone-700 dark:bg-stone-800 dark:text-stone-300">
+                    {lead.budget}
+                  </span>
+                )}
+                {lead.courseInterest && (
+                  <span className="max-w-[200px] shrink-0 truncate rounded-full bg-stone-100 px-2.5 py-1 text-xs text-stone-700 dark:bg-stone-800 dark:text-stone-300 sm:max-w-none">
+                    {lead.courseInterest}
+                  </span>
+                )}
+                {adSourceInfo && (
+                  <span className="shrink-0 rounded-full bg-teal-100 px-2.5 py-1 text-xs text-teal-800 dark:bg-teal-900/50 dark:text-teal-200">
+                    {adSourceInfo.label}
+                  </span>
+                )}
+                {isQualified && (
+                  <span className="shrink-0 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-200">
+                    Qualified
+                  </span>
+                )}
+              </div>
+            </section>
+
+            <section className="rounded-xl border border-stone-200/90 bg-white p-3 dark:border-stone-800 dark:bg-stone-900/30">
+              <p className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-stone-500 dark:text-stone-400">
+                <UserRound size={12} />
+                Assigned to
+              </p>
+              {canAssign ? (
                 <select
-                  value={selectedPitchId}
-                  onChange={(e) => setSelectedPitchId(e.target.value)}
-                  className="input min-w-0 flex-1 py-1.5 text-xs"
+                  value={lead.assignedTo?._id || lead.assignedTo || ""}
+                  disabled={assigning}
+                  onChange={async (e) => {
+                    const v = e.target.value || null;
+                    setAssigning(true);
+                    try {
+                      const updated = await leadsApi.assignLead(lead._id || lead.id, v);
+                      if (onLeadUpdated) onLeadUpdated(updated);
+                    } catch (err) {
+                      alert("Failed to assign: " + err.message);
+                    } finally {
+                      setAssigning(false);
+                    }
+                  }}
+                  className="input min-h-11 w-full"
                 >
-                  <option value="">Choose a script…</option>
-                  {waScripts.map((s) => (
-                    <option key={s._id} value={s._id}>
-                      {s.title}
+                  <option value="">Unassigned</option>
+                  {assignableUsers.map((u) => (
+                    <option key={u._id} value={u._id}>
+                      {u.name} ({u.role})
                     </option>
                   ))}
                 </select>
-                <button
-                  type="button"
-                  disabled={!selectedPitchId}
-                  onClick={handleSendPitchWhatsApp}
-                  className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-[#25D366] px-3 py-2 text-xs font-medium text-white transition hover:bg-[#20bd5a] disabled:cursor-not-allowed disabled:opacity-40"
+              ) : (
+                <p className="text-sm text-stone-700 dark:text-stone-300">
+                  {lead.assignedTo?.name || "Unassigned"}
+                </p>
+              )}
+            </section>
+
+            <section className="rounded-xl border border-stone-200/90 bg-white p-3 dark:border-stone-800 dark:bg-stone-900/30">
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-stone-500 dark:text-stone-400">
+                Move to stage
+              </p>
+              <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+                {STATUSES.filter((s) => s.id !== lead.status).map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => onStatusChange(lead._id || lead.id, s.id)}
+                    className={`flex min-h-10 touch-manipulation items-center justify-center gap-1 rounded-xl border px-2 py-2 text-center text-xs font-medium transition active:scale-[0.98] hover:opacity-90 sm:min-h-0 sm:rounded-full sm:px-2.5 sm:py-1.5 ${s.lightBg} ${s.text} ${s.border}`}
+                  >
+                    <ChevronRight size={12} className="hidden shrink-0 sm:inline" />
+                    <span className="leading-tight">{s.label}</span>
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            <section className="rounded-xl border border-stone-200/90 bg-white p-3 dark:border-stone-800 dark:bg-stone-900/30">
+              <div className="flex flex-col gap-2 text-sm sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
+                {lead.followUpDate && (
+                  <span
+                    className={`inline-flex items-center gap-1.5 rounded-lg bg-stone-50 px-2 py-1.5 text-xs dark:bg-stone-800/50 ${
+                      overdue
+                        ? "font-medium text-red-600 dark:text-red-400"
+                        : "text-stone-600 dark:text-stone-400"
+                    }`}
+                  >
+                    <Calendar size={14} className="shrink-0" />
+                    {overdue ? "Overdue " : "Follow-up "}
+                    {formatDate(lead.followUpDate)}
+                  </span>
+                )}
+                {(lead.tags || []).length > 0 && (
+                  <span className="inline-flex items-start gap-1.5 rounded-lg bg-stone-50 px-2 py-1.5 text-xs text-stone-600 dark:bg-stone-800/50 dark:text-stone-400">
+                    <Tag size={14} className="mt-0.5 shrink-0" />
+                    <span className="min-w-0 break-words">{lead.tags.join(", ")}</span>
+                  </span>
+                )}
+              </div>
+            </section>
+          </div>
+
+          <div className="sticky top-0 z-10 flex border-y border-stone-200 bg-white/95 px-1 shadow-sm backdrop-blur-md dark:border-stone-800 dark:bg-stone-950/95">
+            <TabButton
+              active={tab === "timeline"}
+              onClick={() => setTab("timeline")}
+              icon={<Clock size={14} />}
+              label="Timeline"
+            />
+            <TabButton
+              active={tab === "notes"}
+              onClick={() => setTab("notes")}
+              icon={<MessageSquare size={14} />}
+              label={`Notes (${(lead.notes || []).length})`}
+            />
+            <TabButton
+              active={tab === "chat"}
+              onClick={() => setTab("chat")}
+              icon={<MessageCircle size={14} />}
+              label="Chat"
+            />
+            <TabButton
+              active={tab === "scoring"}
+              onClick={() => setTab("scoring")}
+              icon={<Gauge size={14} />}
+              label="Score"
+            />
+          </div>
+
+          <div className="px-3 py-4 sm:px-4 sm:pb-6">
+            {tab === "timeline" && (
+              <ol className="relative space-y-1 border-l-2 border-stone-200 pl-5 dark:border-stone-800">
+                {[...(lead.timeline || [])].reverse().map((entry) => (
+                  <li key={entry.id || entry._id} className="relative pb-6 last:pb-0">
+                    <span className="absolute -left-[25px] top-1 flex size-3.5 items-center justify-center rounded-full border-2 border-stone-200 bg-white dark:border-stone-700 dark:bg-stone-950">
+                      <span className="size-1.5 rounded-full bg-emerald-500" />
+                    </span>
+                    <p className="text-sm leading-relaxed text-stone-800 dark:text-stone-200">
+                      {entry.description}
+                    </p>
+                    <p className="mt-1 text-xs text-stone-500 dark:text-stone-500">
+                      {formatDateTime(entry.createdAt)}
+                      {entry.actor?.name
+                        ? ` · ${entry.actor.name} (${entry.actor.role || "user"})`
+                        : ""}
+                    </p>
+                  </li>
+                ))}
+              </ol>
+            )}
+
+            {tab === "notes" && (
+              <div className="space-y-4">
+                <form
+                  onSubmit={handleAddNote}
+                  className="flex flex-col gap-2 sm:flex-row"
                 >
-                  <Send size={14} />
-                  Send
-                </button>
+                  <input
+                    value={noteText}
+                    onChange={(e) => setNoteText(e.target.value)}
+                    placeholder="Add a note…"
+                    className="input min-h-11 flex-1"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!noteText.trim()}
+                    className="inline-flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-4 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:opacity-40 dark:bg-emerald-500 sm:w-auto"
+                  >
+                    <Plus size={16} />
+                    Add
+                  </button>
+                </form>
+
+                {(lead.notes || []).length === 0 && (
+                  <p className="py-8 text-center text-sm text-stone-400">
+                    No notes yet
+                  </p>
+                )}
+
+                {[...(lead.notes || [])].reverse().map((note) => (
+                  <div
+                    key={note.id || note._id}
+                    className="rounded-xl border border-stone-200 bg-stone-50 p-3 dark:border-stone-800 dark:bg-stone-900/50"
+                  >
+                    <p className="text-sm leading-relaxed">{note.text}</p>
+                    <p className="mt-2 text-xs text-stone-500">
+                      {formatDateTime(note.createdAt)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {tab === "chat" && (
+              <ChatPanel
+                messages={chatMessages}
+                loading={chatLoading}
+                leadName={lead.name}
+                phone={lead.phone}
+              />
+            )}
+
+            {tab === "scoring" && (
+              <div className="space-y-3">
+                <ScoreRow label="Budget" value={lead.budget || "—"} />
+                <ScoreRow label="Urgency" value={lead.urgency || "low"} />
+                <ScoreRow label="Engagement" value={lead.engagement || "none"} />
+
+                {isQualified && (
+                  <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-800 dark:bg-emerald-950/30">
+                    <p className="flex items-center gap-1.5 text-xs font-semibold text-emerald-800 dark:text-emerald-300">
+                      <ClipboardCheck size={14} /> Qualification
+                    </p>
+                    <div className="mt-2 space-y-1.5 text-xs leading-relaxed text-stone-700 dark:text-stone-400">
+                      {lead.qualificationData.currentSituation && (
+                        <p>
+                          <span className="font-medium text-stone-800 dark:text-stone-300">Situation:</span>{" "}
+                          {lead.qualificationData.currentSituation}
+                        </p>
+                      )}
+                      {lead.qualificationData.goal && (
+                        <p>
+                          <span className="font-medium text-stone-800 dark:text-stone-300">Goal:</span>{" "}
+                          {lead.qualificationData.goal}
+                        </p>
+                      )}
+                      <p>
+                        <span className="font-medium text-stone-800 dark:text-stone-300">Timeline:</span>{" "}
+                        {lead.qualificationData.timeline?.replace(/_/g, " ")}
+                      </p>
+                      <p>
+                        <span className="font-medium text-stone-800 dark:text-stone-300">Budget range:</span>{" "}
+                        {lead.qualificationData.budgetRange?.replace(/_/g, " ")}
+                      </p>
+                      <p>
+                        <span className="font-medium text-stone-800 dark:text-stone-300">Commitment:</span>{" "}
+                        {lead.qualificationData.commitment?.replace(/_/g, " ")}
+                      </p>
+                      {lead.qualificationData.previousExperience && (
+                        <p>
+                          <span className="font-medium text-stone-800 dark:text-stone-300">Experience:</span>{" "}
+                          {lead.qualificationData.previousExperience}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {!isQualified && onQualify && (
+                  <button
+                    type="button"
+                    onClick={() => onQualify(lead)}
+                    className="flex min-h-12 w-full touch-manipulation items-center justify-center gap-2 rounded-xl border border-dashed border-stone-300 px-3 py-3 text-sm font-medium text-stone-600 transition hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-800 dark:border-stone-600 dark:text-stone-400 dark:hover:border-emerald-600 dark:hover:bg-emerald-950/30 dark:hover:text-emerald-300"
+                  >
+                    <ClipboardCheck size={18} />
+                    Qualify this lead
+                  </button>
+                )}
               </div>
             )}
           </div>
-        )}
-
-        {/* Score bar */}
-        <div className="border-b border-stone-200 px-4 py-3 dark:border-stone-800">
-          <div className="flex items-center justify-between text-xs">
-            <span className="font-medium text-stone-600 dark:text-stone-400 flex items-center gap-1">
-              <Gauge size={13} /> Lead Score
-            </span>
-            <span className="font-bold tabular-nums">{lead.leadScore || 0}/100</span>
-          </div>
-          <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-stone-200 dark:bg-stone-800">
-            <div
-              className={`h-full rounded-full transition-all ${
-                (lead.leadScore || 0) >= 65
-                  ? "bg-red-500"
-                  : (lead.leadScore || 0) >= 35
-                    ? "bg-amber-500"
-                    : "bg-sky-400"
-              }`}
-              style={{ width: `${lead.leadScore || 0}%` }}
-            />
-          </div>
         </div>
 
-        {/* Meta */}
-        <div className="flex flex-wrap items-center gap-2 border-b border-stone-200 px-4 py-3 dark:border-stone-800">
-          {status && (
-            <span
-              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium ${status.lightBg} ${status.text} ${status.border}`}
-            >
-              <span className={`size-1.5 rounded-full ${status.color}`} />
-              {status.label}
-            </span>
-          )}
-          <SourceBadge source={lead.source} />
-          {personaInfo && (
-            <span className="rounded-full bg-violet-100 px-2 py-0.5 text-xs font-medium text-violet-700 dark:bg-violet-900/40 dark:text-violet-300">
-              {personaInfo.icon} {personaInfo.label}
-            </span>
-          )}
-          {lead.budget && (
-            <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs text-stone-600 dark:bg-stone-800 dark:text-stone-400">
-              {lead.budget}
-            </span>
-          )}
-          {lead.courseInterest && (
-            <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs text-stone-600 dark:bg-stone-800 dark:text-stone-400">
-              {lead.courseInterest}
-            </span>
-          )}
-          {adSourceInfo && (
-            <span className="rounded-full bg-teal-100 px-2 py-0.5 text-xs text-teal-700 dark:bg-teal-900/40 dark:text-teal-300">
-              {adSourceInfo.label}
-            </span>
-          )}
-          {isQualified && (
-            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
-              Qualified
-            </span>
-          )}
-        </div>
-
-        {/* Assignment */}
-        <div className="flex flex-col gap-2 border-b border-stone-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3 dark:border-stone-800">
-          <p className="flex shrink-0 items-center gap-2 text-xs font-medium text-stone-500 dark:text-stone-400">
-            <UserRound size={14} />
-            Assigned to
-          </p>
-
-          {canAssign ? (
-            <select
-              value={lead.assignedTo?._id || lead.assignedTo || ""}
-              disabled={assigning}
-              onChange={async (e) => {
-                const v = e.target.value || null;
-                setAssigning(true);
-                try {
-                  const updated = await leadsApi.assignLead(lead._id || lead.id, v);
-                  if (onLeadUpdated) onLeadUpdated(updated);
-                } catch (err) {
-                  alert("Failed to assign: " + err.message);
-                } finally {
-                  setAssigning(false);
-                }
-              }}
-              className="input min-w-0 w-full sm:max-w-[240px]"
-            >
-              <option value="">Unassigned</option>
-              {assignableUsers.map((u) => (
-                <option key={u._id} value={u._id}>
-                  {u.name} ({u.role})
-                </option>
-              ))}
-            </select>
-          ) : (
-            <span className="text-xs text-stone-500 dark:text-stone-400">
-              {lead.assignedTo?.name || "Unassigned"}
-            </span>
-          )}
-        </div>
-
-        {/* Quick status change */}
-        <div className="border-b border-stone-200 px-4 py-3 dark:border-stone-800">
-          <p className="mb-2 text-xs font-medium text-stone-500 dark:text-stone-400">
-            Move to
-          </p>
-          <div className="flex flex-wrap gap-1.5">
-            {STATUSES.filter((s) => s.id !== lead.status).map((s) => (
-              <button
-                key={s.id}
-                onClick={() => onStatusChange(lead._id || lead.id, s.id)}
-                className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition hover:opacity-80 ${s.lightBg} ${s.text} ${s.border}`}
-              >
-                <ChevronRight size={12} />
-                {s.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Follow-up & tags */}
-        <div className="flex flex-wrap items-center gap-3 border-b border-stone-200 px-4 py-3 dark:border-stone-800">
-          {lead.followUpDate && (
-            <span
-              className={`flex items-center gap-1 text-xs ${
-                overdue
-                  ? "font-medium text-red-600 dark:text-red-400"
-                  : "text-stone-500 dark:text-stone-400"
-              }`}
-            >
-              <Calendar size={13} />
-              {overdue ? "Overdue: " : "Follow-up: "}
-              {formatDate(lead.followUpDate)}
-            </span>
-          )}
-          {(lead.tags || []).length > 0 && (
-            <span className="flex items-center gap-1.5 text-xs text-stone-500 dark:text-stone-400">
-              <Tag size={13} />
-              {lead.tags.join(", ")}
-            </span>
-          )}
-        </div>
-
-        {/* Tabs */}
-        <div className="-mx-px flex overflow-x-auto overscroll-x-contain border-b border-stone-200 dark:border-stone-800 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <TabButton
-            active={tab === "timeline"}
-            onClick={() => setTab("timeline")}
-            icon={<Clock size={14} />}
-            label="Timeline"
-          />
-          <TabButton
-            active={tab === "notes"}
-            onClick={() => setTab("notes")}
-            icon={<MessageSquare size={14} />}
-            label={`Notes (${(lead.notes || []).length})`}
-          />
-          <TabButton
-            active={tab === "chat"}
-            onClick={() => setTab("chat")}
-            icon={<MessageCircle size={14} />}
-            label="Chat"
-          />
-          <TabButton
-            active={tab === "scoring"}
-            onClick={() => setTab("scoring")}
-            icon={<Gauge size={14} />}
-            label="Score"
-          />
-        </div>
-
-        {/* Tab content */}
-        <div className="min-h-0 flex-1 overflow-y-auto p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-          {tab === "timeline" && (
-            <ol className="relative border-l-2 border-stone-200 pl-6 dark:border-stone-800">
-              {[...(lead.timeline || [])].reverse().map((entry) => (
-                <li key={entry.id || entry._id} className="relative mb-6 last:mb-0">
-                  <span className="absolute -left-[31px] top-1 flex size-4 items-center justify-center rounded-full border-2 border-stone-200 bg-white dark:border-stone-700 dark:bg-stone-900">
-                    <span className="size-1.5 rounded-full bg-stone-400" />
-                  </span>
-                  <p className="text-sm">{entry.description}</p>
-                  <p className="mt-0.5 text-xs text-stone-400">
-                    {formatDateTime(entry.createdAt)}
-                    {entry.actor?.name ? ` • ${entry.actor.name} (${entry.actor.role || "user"})` : ""}
-                  </p>
-                </li>
-              ))}
-            </ol>
-          )}
-
-          {tab === "notes" && (
-            <div className="space-y-4">
-              <form onSubmit={handleAddNote} className="flex gap-2">
-                <input
-                  value={noteText}
-                  onChange={(e) => setNoteText(e.target.value)}
-                  placeholder="Add a note…"
-                  className="input flex-1"
-                />
-                <button
-                  type="submit"
-                  disabled={!noteText.trim()}
-                  className="flex shrink-0 items-center gap-1 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-medium text-white transition hover:bg-emerald-700 disabled:opacity-40 dark:bg-emerald-500"
-                >
-                  <Plus size={14} />
-                  Add
-                </button>
-              </form>
-
-              {(lead.notes || []).length === 0 && (
-                <p className="py-6 text-center text-sm text-stone-400">
-                  No notes yet
-                </p>
-              )}
-
-              {[...(lead.notes || [])].reverse().map((note) => (
-                <div
-                  key={note.id || note._id}
-                  className="rounded-lg border border-stone-200 bg-stone-50 p-3 dark:border-stone-800 dark:bg-stone-900/50"
-                >
-                  <p className="text-sm">{note.text}</p>
-                  <p className="mt-1 text-xs text-stone-400">
-                    {formatDateTime(note.createdAt)}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {tab === "chat" && (
-            <ChatPanel
-              messages={chatMessages}
-              loading={chatLoading}
-              leadName={lead.name}
-              phone={lead.phone}
-            />
-          )}
-
-          {tab === "scoring" && (
-            <div className="space-y-4">
-              <ScoreRow label="Budget" value={lead.budget || "—"} urgency={lead.urgency} />
-              <ScoreRow label="Urgency" value={lead.urgency || "low"} urgency={lead.urgency} />
-              <ScoreRow label="Engagement" value={lead.engagement || "none"} />
-
-              {isQualified && (
-                <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-800 dark:bg-emerald-950/30">
-                  <p className="text-xs font-medium text-emerald-700 dark:text-emerald-300 flex items-center gap-1">
-                    <ClipboardCheck size={13} /> Qualification Data
-                  </p>
-                  <div className="mt-2 space-y-1 text-xs text-stone-600 dark:text-stone-400">
-                    {lead.qualificationData.currentSituation && (
-                      <p><span className="font-medium">Situation:</span> {lead.qualificationData.currentSituation}</p>
-                    )}
-                    {lead.qualificationData.goal && (
-                      <p><span className="font-medium">Goal:</span> {lead.qualificationData.goal}</p>
-                    )}
-                    <p><span className="font-medium">Timeline:</span> {lead.qualificationData.timeline?.replace(/_/g, " ")}</p>
-                    <p><span className="font-medium">Budget Range:</span> {lead.qualificationData.budgetRange?.replace(/_/g, " ")}</p>
-                    <p><span className="font-medium">Commitment:</span> {lead.qualificationData.commitment?.replace(/_/g, " ")}</p>
-                    {lead.qualificationData.previousExperience && (
-                      <p><span className="font-medium">Experience:</span> {lead.qualificationData.previousExperience}</p>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {!isQualified && onQualify && (
-                <button
-                  onClick={() => onQualify(lead)}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-stone-300 px-3 py-3 text-sm font-medium text-stone-500 transition hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-700 dark:border-stone-700 dark:hover:border-emerald-600 dark:hover:bg-emerald-950/30 dark:hover:text-emerald-300"
-                >
-                  <ClipboardCheck size={16} />
-                  Qualify this lead
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Actions */}
-        <div className="flex gap-2 border-t border-stone-200 p-4 dark:border-stone-800">
+        <div className="flex shrink-0 gap-2 border-t border-stone-200 bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] dark:border-stone-800 dark:bg-stone-950 sm:gap-3 sm:p-4">
           <button
+            type="button"
             onClick={() => onEdit(lead)}
-            className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-stone-300 px-3 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-800"
+            className="flex min-h-12 flex-1 touch-manipulation items-center justify-center gap-2 rounded-xl border border-stone-300 bg-white px-3 text-sm font-semibold text-stone-800 shadow-sm transition hover:bg-stone-50 active:scale-[0.99] dark:border-stone-600 dark:bg-stone-900 dark:text-stone-200 dark:hover:bg-stone-800"
           >
-            <Pencil size={14} />
+            <Pencil size={16} />
             Edit
           </button>
           <button
+            type="button"
             onClick={() => {
               if (window.confirm("Delete this lead?")) onDelete(lead._id || lead.id);
             }}
-            className="flex items-center justify-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950/40"
+            className="flex min-h-12 min-w-[5.5rem] touch-manipulation items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50/80 px-3 text-sm font-semibold text-red-700 transition hover:bg-red-100 active:scale-[0.99] dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-400 dark:hover:bg-red-950/60"
           >
-            <Trash2 size={14} />
+            <Trash2 size={16} />
             Delete
           </button>
         </div>
@@ -581,9 +643,11 @@ export default function LeadDetail({
 
 function ScoreRow({ label, value }) {
   return (
-    <div className="flex items-center justify-between rounded-lg border border-stone-200 px-3 py-2 dark:border-stone-800">
+    <div className="flex flex-col gap-1 rounded-xl border border-stone-200 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between dark:border-stone-800">
       <span className="text-xs font-medium text-stone-500 dark:text-stone-400">{label}</span>
-      <span className="text-xs font-semibold capitalize">{value?.replace?.(/_/g, " ") || value}</span>
+      <span className="text-xs font-semibold capitalize text-stone-900 dark:text-stone-100">
+        {value?.replace?.(/_/g, " ") || value}
+      </span>
     </div>
   );
 }
@@ -593,14 +657,14 @@ function TabButton({ active, onClick, icon, label }) {
     <button
       type="button"
       onClick={onClick}
-      className={`flex shrink-0 touch-manipulation items-center justify-center gap-1.5 whitespace-nowrap px-3 py-2.5 text-xs font-medium transition sm:flex-1 ${
+      className={`flex min-h-11 min-w-0 flex-1 touch-manipulation flex-col items-center justify-center gap-0.5 px-1 py-2 text-[11px] font-semibold leading-tight transition sm:min-h-0 sm:flex-row sm:gap-1.5 sm:px-2 sm:py-2.5 sm:text-xs ${
         active
           ? "border-b-2 border-emerald-600 text-emerald-700 dark:border-emerald-400 dark:text-emerald-300"
           : "border-b-2 border-transparent text-stone-400 hover:text-stone-600 dark:text-stone-500 dark:hover:text-stone-300"
       }`}
     >
-      {icon}
-      {label}
+      <span className="[&>svg]:size-4 sm:[&>svg]:size-3.5">{icon}</span>
+      <span className="max-w-[5.5rem] truncate text-center sm:max-w-none">{label}</span>
     </button>
   );
 }
@@ -695,7 +759,7 @@ function ChatBubble({ msg, leadName }) {
   return (
     <div className={`flex ${isMe ? "justify-end" : "justify-start"} mb-1`}>
       <div
-        className={`relative max-w-[85%] rounded-xl px-3 py-2 text-sm shadow-sm ${
+        className={`relative max-w-[min(90vw,20rem)] rounded-xl px-3 py-2 text-sm shadow-sm sm:max-w-[85%] ${
           isMe
             ? "rounded-tr-sm bg-emerald-100 text-emerald-950 dark:bg-emerald-900/60 dark:text-emerald-50"
             : "rounded-tl-sm bg-white text-stone-800 dark:bg-stone-800 dark:text-stone-100"
@@ -748,7 +812,7 @@ function SourceBadge({ source }) {
         ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
         : "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300";
   return (
-    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${cls}`}>
+    <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${cls}`}>
       {source}
     </span>
   );

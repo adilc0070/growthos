@@ -52,6 +52,7 @@ export default function LeadFilters({ filters, onChange, resultCount }) {
   const [assignable, setAssignable] = useState([]);
   const [assignableLoading, setAssignableLoading] = useState(true);
   const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [panelExpanded, setPanelExpanded] = useState(false);
 
   const activeCount = useMemo(() => countActiveFilters(filters), [filters]);
 
@@ -92,17 +93,72 @@ export default function LeadFilters({ filters, onChange, resultCount }) {
 
   const isAdmin = session?.user?.role === "admin";
 
+  if (!panelExpanded) {
+    return (
+      <section
+        className="rounded-xl border border-stone-200 bg-stone-50/90 shadow-sm dark:border-stone-800 dark:bg-stone-900/50"
+        aria-label="Lead filters"
+      >
+        <div className="flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:gap-3 sm:p-3 sm:px-4">
+          <button
+            type="button"
+            onClick={() => setPanelExpanded(true)}
+            className="flex min-w-0 w-full touch-manipulation items-center gap-3 rounded-lg border border-stone-200 bg-white px-3 py-2.5 text-left shadow-sm ring-1 ring-stone-200/80 transition hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-800/80 dark:ring-stone-700 dark:hover:bg-stone-800"
+            aria-expanded="false"
+          >
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-stone-50 text-stone-600 dark:bg-stone-900 dark:text-stone-300">
+              <Filter size={18} strokeWidth={2} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-sm font-semibold text-stone-900 dark:text-stone-100">
+                  Advanced pipeline filters
+                </span>
+                {activeCount > 0 && (
+                  <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                    {activeCount} active
+                  </span>
+                )}
+              </div>
+              <p className="mt-0.5 text-xs text-stone-500 dark:text-stone-400">
+                Open to filter by owner, stage, dates, and lead attributes
+              </p>
+            </div>
+            <ChevronDown size={18} className="shrink-0 text-stone-400" aria-hidden />
+          </button>
+          <div className="flex flex-wrap items-center gap-2 sm:ml-auto sm:justify-end">
+            {activeCount > 0 && (
+              <button
+                type="button"
+                onClick={reset}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-medium text-stone-700 transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
+              >
+                <X size={14} />
+                Clear all
+              </button>
+            )}
+            <div className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-300">
+              <LayoutGrid size={14} className="text-stone-400" />
+              <span>{resultCount}</span>
+              <span className="text-stone-400">leads match</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section
       className="rounded-xl border border-stone-200 bg-stone-50/90 shadow-sm dark:border-stone-800 dark:bg-stone-900/50"
       aria-label="Lead filters"
     >
       <div className="flex flex-col gap-3 border-b border-stone-200/80 px-3 py-3 dark:border-stone-800 sm:flex-row sm:items-center sm:justify-between sm:px-4">
-        <div className="flex items-start gap-3">
+        <div className="flex min-w-0 items-start gap-3">
           <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-white text-stone-600 shadow-sm ring-1 ring-stone-200 dark:bg-stone-800 dark:text-stone-300 dark:ring-stone-700">
             <Filter size={18} strokeWidth={2} />
           </div>
-          <div>
+          <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-sm font-semibold text-stone-900 dark:text-stone-100">
                 Pipeline filters
@@ -121,6 +177,14 @@ export default function LeadFilters({ filters, onChange, resultCount }) {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+          <button
+            type="button"
+            onClick={() => setPanelExpanded(false)}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 transition hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-300 dark:hover:bg-stone-700"
+          >
+            <ChevronUp size={14} />
+            Collapse
+          </button>
           {activeCount > 0 && (
             <button
               type="button"

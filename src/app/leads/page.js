@@ -1,15 +1,17 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { STATUSES } from "@/lib/leads-data";
+import { useState, useEffect, useCallback, useRef } from "react";
 import * as api from "@/lib/leads-api";
+import { downloadLeadsCsv } from "@/lib/leads-export";
 import KanbanBoard from "@/components/leads/kanban-board";
 import LeadDetail from "@/components/leads/lead-detail";
 import LeadFilters, { LEAD_FILTER_DEFAULTS } from "@/components/leads/lead-filters";
 import AddLeads from "@/components/leads/add-leads";
 import QualificationForm from "@/components/leads/qualification-form";
 import WhatsAppBulkUpload from "@/components/leads/whatsapp-bulk-upload";
-import { Plus, Search, Loader2, Database, MessageCircle } from "lucide-react";
+import { Plus, Search, Loader2, Database, MessageCircle, Download } from "lucide-react";
+
+const REFRESH_MS = 30_000;
 
 export default function LeadsPage() {
   const [leads, setLeads] = useState([]);
@@ -27,37 +29,57 @@ export default function LeadsPage() {
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState({ ...LEAD_FILTER_DEFAULTS });
 
-  const loadLeads = useCallback(async () => {
-    try {
-      setError(null);
-      const data = await api.fetchLeads({
-        source: filters.source,
-        courseInterest: filters.courseInterest,
-        temperature: filters.temperature,
-        persona: filters.persona,
-        adSource: filters.adSource,
-        status: filters.status,
-        assignedTo: filters.assignedTo,
-        createdFrom: filters.createdFrom || undefined,
-        createdTo: filters.createdTo || undefined,
-        minScore: filters.minScore || undefined,
-        maxScore: filters.maxScore || undefined,
-        urgency: filters.urgency,
-        engagement: filters.engagement,
-        search: search || undefined,
-      });
-      setLeads(data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }, [filters, search]);
+  const loadLeads = useCallback(
+    async (options = {}) => {
+      const silent = options.silent === true;
+      try {
+        if (!silent) setError(null);
+        const data = await api.fetchLeads({
+          source: filters.source,
+          courseInterest: filters.courseInterest,
+          temperature: filters.temperature,
+          persona: filters.persona,
+          adSource: filters.adSource,
+          status: filters.status,
+          assignedTo: filters.assignedTo,
+          createdFrom: filters.createdFrom || undefined,
+          createdTo: filters.createdTo || undefined,
+          minScore: filters.minScore || undefined,
+          maxScore: filters.maxScore || undefined,
+          urgency: filters.urgency,
+          engagement: filters.engagement,
+          search: search || undefined,
+        });
+        setLeads(data);
+        setSelectedLead((cur) => {
+          if (!cur) return null;
+          const id = cur._id || cur.id;
+          const next = data.find((l) => (l._id || l.id) === id);
+          return next ?? cur;
+        });
+      } catch (err) {
+        if (!silent) setError(err.message);
+      } finally {
+        if (!silent) setLoading(false);
+      }
+    },
+    [filters, search]
+  );
+
+  const loadLeadsRef = useRef(loadLeads);
+  loadLeadsRef.current = loadLeads;
 
   useEffect(() => {
-    const timeout = setTimeout(loadLeads, search ? 300 : 0);
+    const timeout = setTimeout(() => loadLeads(), search ? 300 : 0);
     return () => clearTimeout(timeout);
   }, [loadLeads, search]);
+
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      loadLeadsRef.current({ silent: true });
+    }, REFRESH_MS);
+    return () => window.clearInterval(id);
+  }, []);
 
   async function handleSeed() {
     try {
@@ -148,6 +170,12 @@ export default function LeadsPage() {
     setShowForm(true);
   }
 
+  function handleExportCsv() {
+    if (leads.length === 0) return;
+    const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+    downloadLeadsCsv(leads, `leads-export-${stamp}.csv`);
+  }
+
   if (loading) {
     return (
       <div className="flex flex-1 items-center justify-center py-32">
@@ -161,7 +189,8 @@ export default function LeadsPage() {
       <div className="flex flex-1 flex-col items-center justify-center gap-4 py-32 text-center">
         <p className="text-sm text-red-500">{error}</p>
         <button
-          onClick={loadLeads}
+          type="button"
+          onClick={() => loadLeads()}
           className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
         >
           Retry
@@ -190,6 +219,16 @@ export default function LeadsPage() {
         </div>
 
         <div className="flex flex-wrap items-stretch gap-2 min-[480px]:ml-auto min-[480px]:justify-end">
+          <button
+            type="button"
+            onClick={handleExportCsv}
+            disabled={leads.length === 0}
+            title="Export visible leads as CSV"
+            className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40 min-[400px]:flex-initial dark:border-stone-600 dark:bg-stone-900 dark:text-stone-200 dark:hover:bg-stone-800"
+          >
+            <Download size={16} className="shrink-0" />
+            <span className="truncate">Export</span>
+          </button>
           {leads.length === 0 && (
             <button
               type="button"
